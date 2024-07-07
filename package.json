@@ -19,5 +19,11 @@
     "tailwind": "npx tailwindcss -i ./style/main.css -o ./dist/style.css",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "private": true
+  "private": true,
+  "dependencies": {
+    "firebase": "^10.12.3",
+    "firebaseui": "^6.1.0",
+    "plot": "^1.0.22",
+    "upd8": "^0.2.7"
+  }
 }

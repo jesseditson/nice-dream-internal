@@ -1,12 +1,9 @@
 {% layout 'theme' title: objects.site.name %}
 
-<h1 class="text-3xl font-bold underline">
+<h1 class="text-3xl font-bold">
   {{ objects.site.name }}
 </h1>
 
 <div class="content">
-  {% for section in objects.section %}
-    <h2>{{ section.name }}</h2>
-    <div>{{ section.body }}</div>
-  {% endfor %}
+  <div id="firebaseui-auth-container"></div>
 </div>

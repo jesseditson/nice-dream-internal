@@ -2,7 +2,3 @@
 
 [site]
 name = "string"
-
-[section]
-name = "string"
-body = "markdown"
