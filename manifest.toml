@@ -1,1 +1,7 @@
 archival_version = "0.5.5"
+archival_site = "nicedream"
+site_url = "https://nicedream.onarchival.dev"
+prebuild = [
+    "npm ci",
+    "npm run build",
+]
