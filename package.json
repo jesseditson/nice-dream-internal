@@ -21,6 +21,8 @@
   },
   "private": true,
   "dependencies": {
+    "@types/feather-icons": "^4.29.4",
+    "feather-icons": "^4.29.2",
     "firebase": "^10.12.3",
     "firebaseui": "^6.1.0",
     "plot": "^1.0.22",

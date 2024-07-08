@@ -1,0 +1,16 @@
+<div data-template="quick-search" class="">
+  <input
+    class=""
+    type="text"
+    incremental="true"
+    placeholder="Search..." />
+  <ul class="results flex flex-col gap-2">
+    <li data-template="result" class="border-bottom last:border-bottom-0">
+      <div class="name"></div>
+      <button class="select">
+        <i data-feather="chevron-right"></i>
+      </button>
+    </li>
+  </ul>
+  <div class="create-result"></div>
+</div>
