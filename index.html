@@ -33,8 +33,49 @@
 </h1>
 
 <div class="content">
-  <div id="firebaseui-auth-container"></div>
+  <div id="firebaseui-auth-container"></div></div>
+
+
+<ul data-template="list" class="flex flex-col gap-2">
+  <li data-template="list-item" class="px-4 py-2 flex border-b last:border-b-0">
+    <button class="flex justify-between flex-1" title="Loading...">
+      <div class="name">Loading...</div>
+      <i data-feather="chevron-right"></i>
+    </button>
+  </li>
+</ul>
+
+<ul data-template="collection" class="flex flex-col gap-2">
+  <li data-template="collection-item" class="group px-4 py-2 flex justify-between border-b last:border-b-0">
+    <div class="name flex-1">Loading...</div>
+    <div class="buttons hidden group-hover:flex gap-4">
+      <button class="delete" title="delete">
+        <i data-feather="trash-2"></i>
+      </button>
+      <button class="edit" title="edit">
+        <i data-feather="edit-2"></i>
+      </button>
+    </div>
+  </li>
+</ul>
+
+<div data-template="quick-search" class="">
+  <input
+    class=""
+    type="text"
+    incremental="true"
+    placeholder="Search..." />
+  <ul class="results flex flex-col gap-2">
+    <li data-template="result" class="border-bottom last:border-bottom-0">
+      <div class="name"></div>
+      <button class="select">
+        <i data-feather="chevron-right"></i>
+      </button>
+    </li>
+  </ul>
+  <div class="create-result"></div>
 </div>
+
 
     <script src="/scripts/main.js" type="module"></script>
   </body>
