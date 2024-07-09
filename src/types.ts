@@ -32,16 +32,6 @@ export type Model<C = Channel> = {
   ownerId: string;
 };
 
-export type ChartData = {
-  name: string;
-  values: {
-    day: number;
-    group: string;
-    count: number;
-    revenue: number;
-  }[];
-};
-
 export type State = {
   models: Model[];
   channels: Channel[];
@@ -51,9 +41,24 @@ export type State = {
     offsetDay: number;
     model?: Model;
   };
+  showingChannel?: Channel;
+  showingInput?: Input;
+  showingScreen:
+    | "Models"
+    | "Inputs"
+    | "Channels"
+    | "Model"
+    | "Input"
+    | "Channel";
+  expandedChannels: Set<string>;
   chart: {
-    inputs: ChartData[];
-    channels: ChartData[];
+    data: {
+      day: number;
+      channel: string;
+      input: string;
+      count: number;
+      revenue: number;
+    }[];
     profitLoss: { total: number }[];
   };
 };

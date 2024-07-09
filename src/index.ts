@@ -6,6 +6,8 @@ import { cre8 } from "upd8";
 import { NDEvent } from "./events";
 import { Channel, Curve, Input, Model, State } from "./types";
 import { ModelView } from "./views/ModelView";
+import { ModelListView } from "./views/ModelListView";
+import { matchEnum } from "./utils";
 
 const app = firebase.initializeApp({
   apiKey: "AIzaSyCjURzjH7ZuL7H5qmnqXVypuw9PxN-0CnU",
@@ -68,8 +70,10 @@ const getRemoteState = async (
     models: [],
     channels: [],
     inputs: [],
+    showingScreen: "Models",
+    expandedChannels: new Set(),
     chartInputs: { days: 365, offsetDay: 0 },
-    chart: { inputs: [], channels: [], profitLoss: [] },
+    chart: { data: [], profitLoss: [] },
   };
 
   models.forEach((model) => {
@@ -95,28 +99,15 @@ const defaultAccumulator = (currentCount: number): Accumulator => ({
 const updateChart = (state: State): State => {
   const { model, days, offsetDay } = state.chartInputs;
   if (model) {
-    const channels: State["chart"]["channels"] = [];
-    const inputs: State["chart"]["inputs"] = [];
+    const data: State["chart"]["data"] = [];
     const profitLoss: State["chart"]["profitLoss"] = [];
     let acc: Record<string, Accumulator> = {};
     for (let day = offsetDay; day < days; day++) {
       let dayRevenue = 0;
-      model.channels.forEach((c, channelIndex) => {
-        if (!channels[channelIndex]) {
-          channels[channelIndex] = {
-            name: c.name,
-            values: [],
-          };
-        }
+      model.channels.forEach((c) => {
         let channelCount = 0;
         let channelRevenue = 0;
-        c.inputs.forEach((i, inputIndex) => {
-          if (!inputs[inputIndex]) {
-            inputs[inputIndex] = {
-              name: c.name,
-              values: [],
-            };
-          }
+        c.inputs.forEach((i) => {
           const dailyGrowth = i.growthPercent / i.growthFreq;
           if (!acc[i.guid]) {
             acc[i.guid] = defaultAccumulator(i.seed);
@@ -132,33 +123,33 @@ const updateChart = (state: State): State => {
           const revenue = (count / i.avgFreq) * i.avgSize;
           channelRevenue += revenue;
           channelCount += count;
-          inputs[inputIndex].values.push({
-            group: i.name,
+          data.push({
+            input: i.name,
+            channel: c.name,
             day,
             count,
             revenue,
           });
         });
         dayRevenue += channelRevenue;
-        channels[channelIndex].values.push({
-          group: c.name,
-          count: channelCount,
-          day,
-          revenue: channelRevenue,
-        });
+        // channels[channelIndex].values.push({
+        //   group: c.name,
+        //   count: channelCount,
+        //   day,
+        //   revenue: channelRevenue,
+        // });
       });
       profitLoss.push({ total: dayRevenue });
     }
     state.chart = {
-      channels,
-      inputs,
+      data,
       profitLoss,
     };
   }
   return state;
 };
 
-const initUI = cre8<State, NDEvent>([ModelView]);
+const initUI = cre8<State, NDEvent>([ModelView, ModelListView]);
 
 window.addEventListener("load", async () => {
   var ui = new firebaseui.auth.AuthUI(firebase.auth());
@@ -174,12 +165,54 @@ window.addEventListener("load", async () => {
   // Authorized
   const db = firebase.firestore(app);
   const state = await getRemoteState(db);
-  state.chartInputs.model = state.models.at(0);
-  console.log(state);
   updateChart(state);
-  console.log(state);
 
   const upd8 = initUI(state, (event) => {
+    matchEnum(event, (ev, value) => {
+      switch (ev) {
+        case "GoBack": {
+          switch (state.showingScreen) {
+            case "Model":
+              state.showingScreen = "Models";
+              break;
+            case "Inputs":
+              state.showingScreen = "Channel";
+              break;
+            case "Channels":
+              state.showingScreen = "Model";
+              break;
+            case "Input":
+              state.showingScreen = "Inputs";
+              break;
+          }
+        }
+        case "ShowModel": {
+          const model = state.models.find((m) => m.guid === value!.guid);
+          if (model) {
+            state.chartInputs.model = model;
+            updateChart(state);
+            state.showingScreen = "Model";
+          }
+          break;
+        }
+        case "ToggleChannelExpanded": {
+          if (state.expandedChannels.has(value.guid)) {
+            state.expandedChannels.delete(value.guid);
+          } else {
+            state.expandedChannels.add(value.guid);
+          }
+          break;
+        }
+        case "ShowChannel": {
+          const channel = state.channels.find((m) => m.guid === value!.guid);
+          if (channel) {
+            state.showingChannel = channel;
+            state.showingScreen = "Channel";
+          }
+          break;
+        }
+      }
+    });
     upd8(state);
     feather.replace();
   });

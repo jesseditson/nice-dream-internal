@@ -1,13 +1,28 @@
-<ul data-template="collection" class="flex flex-col gap-2">
-  <li data-template="collection-item" class="group px-4 py-2 flex justify-between border-b last:border-b-0">
-    <div class="name flex-1">Loading...</div>
-    <div class="buttons hidden group-hover:flex gap-4">
-      <button class="delete" title="delete">
-        <i data-feather="trash-2"></i>
-      </button>
-      <button class="edit" title="edit">
-        <i data-feather="edit-2"></i>
-      </button>
-    </div>
-  </li>
-</ul>
+<div data-template="collection" class="flex flex-col gap-4">
+  <h2 class="title text-bold text-2xl">{{ title }}</h2>
+  <ul class="collection flex flex-col gap-2">
+    <li data-template="collection-row" class="flex flex-col border-b last:border-b-0">
+      <div class="group px-4 py-2 flex justify-between">
+        <div class="name flex-1">Loading...</div>
+        <div class="buttons hidden group-hover:flex gap-4">
+          <button class="delete" title="delete">
+            <i data-feather="trash-2"></i>
+          </button>
+          <button class="edit" title="edit">
+            <i data-feather="edit-2"></i>
+          </button>
+          <button class="toggle" title="show/hide">
+            <i data-feather="chevron-right"></i>
+          </button>
+        </div>
+      </div>
+      <div>
+        <ul class="items hidden group px-4 py-2 flex flex-col justify-between border-b last:border-b-0">
+          <li data-template="collection-item">
+            <div class="name flex-1">Loading...</div>
+          </li>
+        </ul>
+      </div>
+    </li>
+  </ul>
+</div>
