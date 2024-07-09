@@ -5,7 +5,8 @@
     "@chialab/esbuild-plugin-meta-url": "^0.17.5",
     "esbuild": "^0.17.18",
     "npm-run-all": "^4.1.5",
-    "tailwindcss": "^3.4.1"
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.5.3"
   },
   "scripts": {
     "build": "npm run build:site; npm run build:js; npm run build:css",
@@ -21,11 +22,11 @@
   },
   "private": true,
   "dependencies": {
+    "@observablehq/plot": "^0.6.15",
     "@types/feather-icons": "^4.29.4",
     "feather-icons": "^4.29.2",
     "firebase": "^10.12.3",
     "firebaseui": "^6.1.0",
-    "plot": "^1.0.22",
     "upd8": "^0.2.7"
   }
 }

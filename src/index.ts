@@ -5,6 +5,7 @@ import feather from "feather-icons";
 import { cre8 } from "upd8";
 import { NDEvent } from "./events";
 import { Channel, Curve, Input, Model, State } from "./types";
+import { ModelView } from "./views/ModelView";
 
 const app = firebase.initializeApp({
   apiKey: "AIzaSyCjURzjH7ZuL7H5qmnqXVypuw9PxN-0CnU",
@@ -22,7 +23,7 @@ const getMap = async <T>(
   const objects = await db.collection(name).get();
   const oMap = new Map();
   objects.forEach((obj) => {
-    oMap.set(obj.id, obj.data());
+    oMap.set(obj.id, { ...obj.data(), guid: obj.id });
   });
   return oMap;
 };
@@ -34,7 +35,9 @@ const invariant = <T>(i: T | undefined | null, m: string): T => {
   return i;
 };
 
-const getState = async (db: firebase.firestore.Firestore): Promise<State> => {
+const getRemoteState = async (
+  db: firebase.firestore.Firestore
+): Promise<State> => {
   const [models, inputs, channels, curves] = await Promise.all([
     getMap<Model<firebase.firestore.DocumentReference>>(db, "models"),
     getMap<Input<firebase.firestore.DocumentReference>>(db, "inputs"),
@@ -65,6 +68,8 @@ const getState = async (db: firebase.firestore.Firestore): Promise<State> => {
     models: [],
     channels: [],
     inputs: [],
+    chartInputs: { days: 365, offsetDay: 0 },
+    chart: { inputs: [], channels: [], profitLoss: [] },
   };
 
   models.forEach((model) => {
@@ -79,11 +84,81 @@ const getState = async (db: firebase.firestore.Firestore): Promise<State> => {
   inputs.forEach((_, id) => {
     state.inputs.push(derefInput(id));
   });
-  console.log(state);
   return state;
 };
 
-const initUI = cre8<State, NDEvent>([]);
+type Accumulator = { currentCount: number; isSaturated: boolean };
+const defaultAccumulator = (currentCount: number): Accumulator => ({
+  currentCount,
+  isSaturated: false,
+});
+const updateChart = (state: State): State => {
+  const { model, days, offsetDay } = state.chartInputs;
+  if (model) {
+    const channels: State["chart"]["channels"] = [];
+    const inputs: State["chart"]["inputs"] = [];
+    const profitLoss: State["chart"]["profitLoss"] = [];
+    let acc: Record<string, Accumulator> = {};
+    for (let day = offsetDay; day < days; day++) {
+      let dayRevenue = 0;
+      model.channels.forEach((c, channelIndex) => {
+        if (!channels[channelIndex]) {
+          channels[channelIndex] = {
+            name: c.name,
+            values: [],
+          };
+        }
+        let channelCount = 0;
+        let channelRevenue = 0;
+        c.inputs.forEach((i, inputIndex) => {
+          if (!inputs[inputIndex]) {
+            inputs[inputIndex] = {
+              name: c.name,
+              values: [],
+            };
+          }
+          const dailyGrowth = i.growthPercent / i.growthFreq;
+          if (!acc[i.guid]) {
+            acc[i.guid] = defaultAccumulator(i.seed);
+          }
+          if (!acc[i.guid].isSaturated) {
+            acc[i.guid].currentCount =
+              acc[i.guid].currentCount + acc[i.guid].currentCount * dailyGrowth;
+          }
+          const count = Math.round(acc[i.guid].currentCount);
+          if (count >= i.saturation) {
+            acc[i.guid].isSaturated = true;
+          }
+          const revenue = (count / i.avgFreq) * i.avgSize;
+          channelRevenue += revenue;
+          channelCount += count;
+          inputs[inputIndex].values.push({
+            group: i.name,
+            day,
+            count,
+            revenue,
+          });
+        });
+        dayRevenue += channelRevenue;
+        channels[channelIndex].values.push({
+          group: c.name,
+          count: channelCount,
+          day,
+          revenue: channelRevenue,
+        });
+      });
+      profitLoss.push({ total: dayRevenue });
+    }
+    state.chart = {
+      channels,
+      inputs,
+      profitLoss,
+    };
+  }
+  return state;
+};
+
+const initUI = cre8<State, NDEvent>([ModelView]);
 
 window.addEventListener("load", async () => {
   var ui = new firebaseui.auth.AuthUI(firebase.auth());
@@ -98,10 +173,14 @@ window.addEventListener("load", async () => {
   }
   // Authorized
   const db = firebase.firestore(app);
-  const state = await getState(db);
+  const state = await getRemoteState(db);
+  state.chartInputs.model = state.models.at(0);
+  console.log(state);
+  updateChart(state);
+  console.log(state);
 
   const upd8 = initUI(state, (event) => {
-    // upd8(state);
+    upd8(state);
     feather.replace();
   });
 });

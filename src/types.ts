@@ -1,34 +1,59 @@
 export type Curve = {
+  guid: string;
   name: string;
   curve: number[];
   notes: string;
   period: number;
 };
 
-export type Input<Curve> = {
+export type Input<C = Curve> = {
+  guid: string;
   name: string;
   avgFreq: number;
-  avgLifetime: number;
   avgSize: number;
-  curve: Curve;
-  growth: number;
+  curve: C;
+  growthPercent: number;
+  growthFreq: number;
   notes: string;
+  seed: number;
   saturation: number;
 };
 
-export type Channel<Input> = {
+export type Channel<I = Input> = {
+  guid: string;
   name: string;
-  inputs: Input[];
+  inputs: I[];
 };
 
-export type Model<Channel> = {
+export type Model<C = Channel> = {
+  guid: string;
   name: string;
-  channels: Channel[];
+  channels: C[];
   ownerId: string;
 };
 
+export type ChartData = {
+  name: string;
+  values: {
+    day: number;
+    group: string;
+    count: number;
+    revenue: number;
+  }[];
+};
+
 export type State = {
-  models: Model<Channel<Input<Curve>>>[];
-  channels: Channel<Input<Curve>>[];
-  inputs: Input<Curve>[];
+  models: Model[];
+  channels: Channel[];
+  inputs: Input[];
+  chartInputs: {
+    days: number;
+    offsetDay: number;
+    model?: Model;
+  };
+  chart: {
+    inputs: ChartData[];
+    channels: ChartData[];
+    profitLoss: { total: number }[];
+  };
 };
