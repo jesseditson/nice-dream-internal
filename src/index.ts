@@ -7,7 +7,8 @@ import { NDEvent } from "./events";
 import { Channel, Curve, Input, Model, State } from "./types";
 import { ModelView } from "./views/ModelView";
 import { ModelListView } from "./views/ModelListView";
-import { matchEnum } from "./utils";
+import { invariant, matchEnum } from "./utils";
+import { Nav } from "./views/Nav";
 
 const app = firebase.initializeApp({
   apiKey: "AIzaSyCjURzjH7ZuL7H5qmnqXVypuw9PxN-0CnU",
@@ -28,13 +29,6 @@ const getMap = async <T>(
     oMap.set(obj.id, { ...obj.data(), guid: obj.id });
   });
   return oMap;
-};
-
-const invariant = <T>(i: T | undefined | null, m: string): T => {
-  if (!i) {
-    throw new Error(m);
-  }
-  return i;
 };
 
 const getRemoteState = async (
@@ -149,7 +143,7 @@ const updateChart = (state: State): State => {
   return state;
 };
 
-const initUI = cre8<State, NDEvent>([ModelView, ModelListView]);
+const initUI = cre8<State, NDEvent>([Nav, ModelView, ModelListView]);
 
 window.addEventListener("load", async () => {
   var ui = new firebaseui.auth.AuthUI(firebase.auth());
@@ -185,6 +179,7 @@ window.addEventListener("load", async () => {
               state.showingScreen = "Inputs";
               break;
           }
+          break;
         }
         case "ShowModel": {
           const model = state.models.find((m) => m.guid === value!.guid);

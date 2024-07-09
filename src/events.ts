@@ -6,6 +6,15 @@ export type NDEvent =
   | "NewChannel"
   | "NewInput"
   | {
+      CreateModel: { name: string };
+    }
+  | {
+      CreateChannel: { name: string; modelGuid: string };
+    }
+  | {
+      CreateInput: { name: string; channnelGuid: string };
+    }
+  | {
       ShowModel: { guid: string };
     }
   | {
@@ -13,6 +22,12 @@ export type NDEvent =
     }
   | {
       ShowInput: { guid: string };
+    }
+  | {
+      ChooseChannel: { modelGuid: string };
+    }
+  | {
+      ChooseInput: { channelGuid: string };
     }
   | {
       AddChannel: { modelGuid: string; channelGuid: string };

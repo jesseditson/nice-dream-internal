@@ -1,5 +1,10 @@
 <div data-template="collection" class="flex flex-col gap-4">
-  <h2 class="title text-bold text-2xl">{{ title }}</h2>
+  <div class="w-full flex justify-between">
+    <h2 class="title text-bold text-2xl">{{ title }}</h2>
+    <button class="add">
+      <i data-feather="plus-square"></i>
+    </button>
+  </div>
   <ul class="collection flex flex-col gap-2">
     <li data-template="collection-row" class="flex flex-col border-b last:border-b-0">
       <div class="group px-4 py-2 flex justify-between">

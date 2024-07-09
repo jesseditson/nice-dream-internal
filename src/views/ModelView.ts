@@ -12,9 +12,21 @@ export class ModelView extends View {
     return ModelView.id;
   }
 
+  get modelGuid() {
+    return this.state.chartInputs.model!.guid;
+  }
+
   mount() {
     const el = invariant(this.rootElement, "model root");
     return [
+      this.eventListener(
+        el,
+        "click",
+        () => {
+          this.dispatchEvent({ ChooseChannel: { modelGuid: this.modelGuid } });
+        },
+        ".add"
+      ),
       this.eventListener(
         el,
         "click",
@@ -23,7 +35,7 @@ export class ModelView extends View {
           this.dispatchEvent({
             RemoveChannel: {
               channelGuid,
-              modelGuid: this.state.chartInputs.model!.guid,
+              modelGuid: this.modelGuid,
             },
           });
         },
@@ -64,7 +76,7 @@ export class ModelView extends View {
       },
       color: { legend: true },
       marks: [
-        // Plot.ruleY([0]),
+        Plot.ruleY([0]),
         Plot.areaY(data, {
           x: "day",
           y: "revenue",
