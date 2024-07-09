@@ -45530,8 +45530,8 @@ function pointer_default(event, node) {
       return [point6.x, point6.y];
     }
     if (node.getBoundingClientRect) {
-      var rect2 = node.getBoundingClientRect();
-      return [event.clientX - rect2.left - node.clientLeft, event.clientY - rect2.top - node.clientTop];
+      var rect = node.getBoundingClientRect();
+      return [event.clientX - rect.left - node.clientLeft, event.clientY - rect.top - node.clientTop];
     }
   }
   return [event.pageX, event.pageY];
@@ -48618,9 +48618,9 @@ var areaStream = {
     areaRingSum = new Adder();
   },
   result: function() {
-    var area = areaSum / 2;
+    var area2 = areaSum / 2;
     areaSum = new Adder();
-    return area;
+    return area2;
   }
 };
 function areaRingStart() {
@@ -51832,6 +51832,82 @@ function line_default2(x3, y2) {
   return line2;
 }
 
+// node_modules/d3-shape/src/area.js
+function area_default2(x05, y05, y12) {
+  var x12 = null, defined2 = constant_default4(true), context = null, curve = linear_default, output = null, path2 = withPath(area2);
+  x05 = typeof x05 === "function" ? x05 : x05 === void 0 ? x2 : constant_default4(+x05);
+  y05 = typeof y05 === "function" ? y05 : y05 === void 0 ? constant_default4(0) : constant_default4(+y05);
+  y12 = typeof y12 === "function" ? y12 : y12 === void 0 ? y : constant_default4(+y12);
+  function area2(data) {
+    var i, j2, k3, n = (data = array_default(data)).length, d, defined0 = false, buffer, x0z = new Array(n), y0z = new Array(n);
+    if (context == null)
+      output = curve(buffer = path2());
+    for (i = 0; i <= n; ++i) {
+      if (!(i < n && defined2(d = data[i], i, data)) === defined0) {
+        if (defined0 = !defined0) {
+          j2 = i;
+          output.areaStart();
+          output.lineStart();
+        } else {
+          output.lineEnd();
+          output.lineStart();
+          for (k3 = i - 1; k3 >= j2; --k3) {
+            output.point(x0z[k3], y0z[k3]);
+          }
+          output.lineEnd();
+          output.areaEnd();
+        }
+      }
+      if (defined0) {
+        x0z[i] = +x05(d, i, data), y0z[i] = +y05(d, i, data);
+        output.point(x12 ? +x12(d, i, data) : x0z[i], y12 ? +y12(d, i, data) : y0z[i]);
+      }
+    }
+    if (buffer)
+      return output = null, buffer + "" || null;
+  }
+  function arealine() {
+    return line_default2().defined(defined2).curve(curve).context(context);
+  }
+  area2.x = function(_) {
+    return arguments.length ? (x05 = typeof _ === "function" ? _ : constant_default4(+_), x12 = null, area2) : x05;
+  };
+  area2.x0 = function(_) {
+    return arguments.length ? (x05 = typeof _ === "function" ? _ : constant_default4(+_), area2) : x05;
+  };
+  area2.x1 = function(_) {
+    return arguments.length ? (x12 = _ == null ? null : typeof _ === "function" ? _ : constant_default4(+_), area2) : x12;
+  };
+  area2.y = function(_) {
+    return arguments.length ? (y05 = typeof _ === "function" ? _ : constant_default4(+_), y12 = null, area2) : y05;
+  };
+  area2.y0 = function(_) {
+    return arguments.length ? (y05 = typeof _ === "function" ? _ : constant_default4(+_), area2) : y05;
+  };
+  area2.y1 = function(_) {
+    return arguments.length ? (y12 = _ == null ? null : typeof _ === "function" ? _ : constant_default4(+_), area2) : y12;
+  };
+  area2.lineX0 = area2.lineY0 = function() {
+    return arealine().x(x05).y(y05);
+  };
+  area2.lineY1 = function() {
+    return arealine().x(x05).y(y12);
+  };
+  area2.lineX1 = function() {
+    return arealine().x(x12).y(y05);
+  };
+  area2.defined = function(_) {
+    return arguments.length ? (defined2 = typeof _ === "function" ? _ : constant_default4(!!_), area2) : defined2;
+  };
+  area2.curve = function(_) {
+    return arguments.length ? (curve = _, context != null && (output = curve(context)), area2) : curve;
+  };
+  area2.context = function(_) {
+    return arguments.length ? (_ == null ? context = output = null : output = curve(context = _), area2) : context;
+  };
+  return area2;
+}
+
 // node_modules/d3-shape/src/curve/bump.js
 var Bump = class {
   constructor(context, x3) {
@@ -53378,14 +53454,8 @@ function map2(values2, f, type2 = Array) {
 function slice2(values2, type2 = Array) {
   return values2 instanceof type2 ? values2.slice() : type2.from(values2);
 }
-function hasX({ x: x3, x1: x12, x2: x22 }) {
-  return x3 !== void 0 || x12 !== void 0 || x22 !== void 0;
-}
 function hasY({ y: y2, y1: y12, y2: y22 }) {
   return y2 !== void 0 || y12 !== void 0 || y22 !== void 0;
-}
-function hasXY(options) {
-  return hasX(options) || hasY(options) || options.interval !== void 0;
 }
 function isObject2(option) {
   return option?.toString === objectToString;
@@ -56885,9 +56955,6 @@ function maybeIntervalMidK(k3, maybeInsetK, options) {
     }
   });
 }
-function maybeTrivialIntervalX(options = {}) {
-  return maybeIntervalK("x", maybeInsetX, options, true);
-}
 function maybeIntervalX(options = {}) {
   return maybeIntervalK("x", maybeInsetX, options);
 }
@@ -58353,7 +58420,7 @@ var Frame = class extends Mark {
     const y12 = marginTop + insetTop;
     const y2 = height - marginBottom - insetBottom;
     return create2(anchor ? "svg:line" : "svg:rect", context).datum(0).call(applyIndirectStyles, this, dimensions, context).call(applyDirectStyles, this).call(applyChannelStyles, this, channels).call(applyTransform, this, {}).call(
-      anchor === "left" ? (line2) => line2.attr("x1", x12).attr("x2", x12).attr("y1", y12).attr("y2", y2) : anchor === "right" ? (line2) => line2.attr("x1", x22).attr("x2", x22).attr("y1", y12).attr("y2", y2) : anchor === "top" ? (line2) => line2.attr("x1", x12).attr("x2", x22).attr("y1", y12).attr("y2", y12) : anchor === "bottom" ? (line2) => line2.attr("x1", x12).attr("x2", x22).attr("y1", y2).attr("y2", y2) : (rect2) => rect2.attr("x", x12).attr("y", y12).attr("width", x22 - x12).attr("height", y2 - y12).attr("rx", rx).attr("ry", ry)
+      anchor === "left" ? (line2) => line2.attr("x1", x12).attr("x2", x12).attr("y1", y12).attr("y2", y2) : anchor === "right" ? (line2) => line2.attr("x1", x22).attr("x2", x22).attr("y1", y12).attr("y2", y2) : anchor === "top" ? (line2) => line2.attr("x1", x12).attr("x2", x22).attr("y1", y12).attr("y2", y12) : anchor === "bottom" ? (line2) => line2.attr("x1", x12).attr("x2", x22).attr("y1", y2).attr("y2", y2) : (rect) => rect.attr("x", x12).attr("y", y12).attr("width", x22 - x12).attr("height", y2 - y12).attr("rx", rx).attr("ry", ry)
     ).node();
   }
 };
@@ -60057,8 +60124,52 @@ function orderZDomain(compare, domain) {
   };
 }
 
-// node_modules/@observablehq/plot/src/marks/line.js
+// node_modules/@observablehq/plot/src/marks/area.js
 var defaults6 = {
+  ariaLabel: "area",
+  strokeWidth: 1,
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+  strokeMiterlimit: 1
+};
+var Area = class extends Mark {
+  constructor(data, options = {}) {
+    const { x1: x12, y1: y12, x2: x22, y2, z: z2, curve, tension } = options;
+    super(
+      data,
+      {
+        x1: { value: x12, scale: "x" },
+        y1: { value: y12, scale: "y" },
+        x2: { value: x22, scale: "x", optional: true },
+        y2: { value: y2, scale: "y", optional: true },
+        z: { value: maybeZ(options), optional: true }
+      },
+      options,
+      defaults6
+    );
+    this.z = z2;
+    this.curve = maybeCurve(curve, tension);
+  }
+  filter(index2) {
+    return index2;
+  }
+  render(index2, scales, channels, dimensions, context) {
+    const { x1: X12, y1: Y12, x2: X23 = X12, y2: Y23 = Y12 } = channels;
+    return create2("svg:g", context).call(applyIndirectStyles, this, dimensions, context).call(applyTransform, this, scales, 0, 0).call(
+      (g) => g.selectAll().data(groupIndex(index2, [X12, Y12, X23, Y23], this, channels)).enter().append("path").call(applyDirectStyles, this).call(applyGroupedChannelStyles, this, channels).attr(
+        "d",
+        area_default2().curve(this.curve).defined((i) => i >= 0).x0((i) => X12[i]).y0((i) => Y12[i]).x1((i) => X23[i]).y1((i) => Y23[i])
+      )
+    ).node();
+  }
+};
+function areaY(data, options) {
+  const { x: x3 = indexOf, ...rest } = maybeDenseIntervalX(options);
+  return new Area(data, maybeStackY(maybeIdentityY({ ...rest, x1: x3, x2: void 0 })));
+}
+
+// node_modules/@observablehq/plot/src/marks/line.js
+var defaults7 = {
   ariaLabel: "line",
   fill: "none",
   stroke: "currentColor",
@@ -60078,7 +60189,7 @@ var Line = class extends Mark {
         z: { value: maybeZ(options), optional: true }
       },
       options,
-      defaults6
+      defaults7
     );
     this.z = z2;
     this.curve = maybeCurveAuto(curve, tension);
@@ -60125,74 +60236,6 @@ function lineY(data, { x: x3 = indexOf, y: y2 = identity6, ...options } = {}) {
   return new Line(data, maybeDenseIntervalX({ ...options, x: x3, y: y2 }));
 }
 
-// node_modules/@observablehq/plot/src/marks/rect.js
-var defaults7 = {
-  ariaLabel: "rect"
-};
-var Rect = class extends Mark {
-  constructor(data, options = {}) {
-    const {
-      x1: x12,
-      y1: y12,
-      x2: x22,
-      y2,
-      inset = 0,
-      insetTop = inset,
-      insetRight = inset,
-      insetBottom = inset,
-      insetLeft = inset,
-      rx,
-      ry
-    } = options;
-    super(
-      data,
-      {
-        x1: { value: x12, scale: "x", type: x12 != null && x22 == null ? "band" : void 0, optional: true },
-        y1: { value: y12, scale: "y", type: y12 != null && y2 == null ? "band" : void 0, optional: true },
-        x2: { value: x22, scale: "x", optional: true },
-        y2: { value: y2, scale: "y", optional: true }
-      },
-      options,
-      defaults7
-    );
-    this.insetTop = number5(insetTop);
-    this.insetRight = number5(insetRight);
-    this.insetBottom = number5(insetBottom);
-    this.insetLeft = number5(insetLeft);
-    this.rx = impliedString(rx, "auto");
-    this.ry = impliedString(ry, "auto");
-  }
-  render(index2, scales, channels, dimensions, context) {
-    const { x: x3, y: y2 } = scales;
-    const { x1: X12, y1: Y12, x2: X23, y2: Y23 } = channels;
-    const { marginTop, marginRight, marginBottom, marginLeft, width, height } = dimensions;
-    const { projection: projection3 } = context;
-    const { insetTop, insetRight, insetBottom, insetLeft, rx, ry } = this;
-    const bx = (x3?.bandwidth ? x3.bandwidth() : 0) - insetLeft - insetRight;
-    const by = (y2?.bandwidth ? y2.bandwidth() : 0) - insetTop - insetBottom;
-    return create2("svg:g", context).call(applyIndirectStyles, this, dimensions, context).call(applyTransform, this, {}, 0, 0).call(
-      (g) => g.selectAll().data(index2).enter().append("rect").call(applyDirectStyles, this).attr(
-        "x",
-        X12 && (projection3 || !isCollapsed(x3)) ? X23 ? (i) => Math.min(X12[i], X23[i]) + insetLeft : (i) => X12[i] + insetLeft : marginLeft + insetLeft
-      ).attr(
-        "y",
-        Y12 && (projection3 || !isCollapsed(y2)) ? Y23 ? (i) => Math.min(Y12[i], Y23[i]) + insetTop : (i) => Y12[i] + insetTop : marginTop + insetTop
-      ).attr(
-        "width",
-        X12 && (projection3 || !isCollapsed(x3)) ? X23 ? (i) => Math.max(0, Math.abs(X23[i] - X12[i]) + bx) : bx : width - marginRight - marginLeft - insetRight - insetLeft
-      ).attr(
-        "height",
-        Y12 && (projection3 || !isCollapsed(y2)) ? Y23 ? (i) => Math.max(0, Math.abs(Y12[i] - Y23[i]) + by) : by : height - marginTop - marginBottom - insetTop - insetBottom
-      ).call(applyAttr, "rx", rx).call(applyAttr, "ry", ry).call(applyChannelStyles, this, channels)
-    ).node();
-  }
-};
-function rectY(data, options = {}) {
-  if (!hasXY(options))
-    options = { ...options, x: indexOf, y2: identity6, interval: 1 };
-  return new Rect(data, maybeStackY(maybeTrivialIntervalX(maybeIdentityY(options))));
-}
-
 // node_modules/@observablehq/plot/src/index.js
 Mark.prototype.plot = function({ marks: marks2 = [], ...options } = {}) {
   return plot({ ...options, marks: [...marks2, this] });
@@ -60200,6 +60243,22 @@ Mark.prototype.plot = function({ marks: marks2 = [], ...options } = {}) {
 
 // src/views/View.ts
 var View = class extends Upd8View {
+};
+
+// src/utils.ts
+var matchEnum = (enm, arm) => {
+  if (typeof enm == "string") {
+    return arm(enm);
+  } else {
+    const k3 = Object.keys(enm)[0];
+    return arm(k3, enm[k3]);
+  }
+};
+var invariant = (v2, name7) => {
+  if (!v2) {
+    throw new Error(name7 ? `${name7} must be defined` : "invariant violated");
+  }
+  return v2;
 };
 
 // src/views/ModelView.ts
@@ -60210,13 +60269,57 @@ var ModelView = class extends View {
   get id() {
     return ModelView.id;
   }
+  get modelGuid() {
+    return this.state.chartInputs.model.guid;
+  }
   mount() {
-    return [];
+    const el = invariant(this.rootElement, "model root");
+    return [
+      this.eventListener(
+        el,
+        "click",
+        () => {
+          this.dispatchEvent({ ChooseChannel: { modelGuid: this.modelGuid } });
+        },
+        ".add"
+      ),
+      this.eventListener(
+        el,
+        "click",
+        (_, d) => {
+          const channelGuid = invariant(d.dataset.guid, "guid");
+          this.dispatchEvent({
+            RemoveChannel: {
+              channelGuid,
+              modelGuid: this.modelGuid
+            }
+          });
+        },
+        ".delete"
+      ),
+      this.eventListener(
+        el,
+        "click",
+        (_, d) => {
+          const guid = invariant(d.dataset.guid, "guid");
+          this.dispatchEvent({ EditChannel: { guid } });
+        },
+        ".edit"
+      ),
+      this.eventListener(
+        el,
+        "click",
+        (_, d) => {
+          const guid = invariant(d.dataset.guid, "guid");
+          this.dispatchEvent({ ToggleChannelExpanded: { guid } });
+        },
+        ".toggle"
+      )
+    ];
   }
   // https://leebyron.com/streamgraph/
   getChart() {
-    const { channels, inputs, profitLoss } = this.state.chart;
-    console.log(channels, inputs, profitLoss);
+    const { data, profitLoss } = this.state.chart;
     return plot({
       y: {
         grid: true,
@@ -60229,22 +60332,118 @@ var ModelView = class extends View {
       color: { legend: true },
       marks: [
         ruleY([0]),
-        // Plot.areaY(channels, {
-        //   x: "day",
-        //   y: "revenue",
-        //   z: "format",
-        //   fill: "group",
-        //   offset: "center",
-        // }),
-        rectY(inputs, { x: "day", y: "revenue", z: "group" }),
+        areaY(data, {
+          x: "day",
+          y: "revenue",
+          z: "input",
+          fill: "channel"
+        }),
         lineY(profitLoss, {
           y: "total"
         })
       ]
     });
   }
+  showing(state) {
+    return state.showingScreen === "Model";
+  }
   updated() {
     this.setContent("chart", this.getChart());
+    const model = invariant(this.state.chartInputs.model, "model");
+    const channelCollection = this.template("collection");
+    this.setContent(
+      channelCollection,
+      model.channels.map((c4) => {
+        const cEl = this.template("collection-row");
+        this.setContent(cEl, c4.name, ".name");
+        this.setData(cEl, { guid: c4.guid }, ".delete");
+        this.setData(cEl, { guid: c4.guid }, ".edit");
+        this.setData(cEl, { guid: c4.guid }, ".toggle");
+        const showItems = this.state.expandedChannels.has(c4.guid);
+        this.findElement(cEl, ".items").classList.toggle("hidden", !showItems);
+        const toggleIcon = document.createElement("i");
+        toggleIcon.dataset.feather = showItems ? "chevron-down" : "chevron-right";
+        this.setContent(cEl, toggleIcon, ".toggle");
+        if (showItems) {
+          this.setContent(
+            cEl,
+            c4.inputs.map((i) => {
+              const iEl = this.template("collection-item");
+              this.setContent(iEl, i.name, ".name");
+              return iEl;
+            }),
+            ".items"
+          );
+        }
+        return cEl;
+      }),
+      ".collection"
+    );
+    this.setContent("channels", channelCollection);
+  }
+};
+
+// src/views/ModelListView.ts
+var ModelListView = class extends View {
+  static get id() {
+    return "model-list";
+  }
+  get id() {
+    return ModelListView.id;
+  }
+  mount() {
+    return [
+      this.eventListener(
+        this.rootElement,
+        "click",
+        (_, el) => {
+          this.dispatchEvent({ ShowModel: { guid: el.dataset.guid } });
+        },
+        ".button"
+      )
+    ];
+  }
+  showing(state) {
+    return state.showingScreen === "Models";
+  }
+  updated() {
+    const modelList = this.template("list");
+    this.setContent(modelList, "Models", ".title");
+    this.setContent(
+      modelList,
+      this.state.models.map((m) => {
+        const mEl = this.template("list-item");
+        this.setContent(mEl, m.name, ".name");
+        this.setAttrs(mEl, { title: m.name }, ".button");
+        this.setData(mEl, { guid: m.guid }, ".button");
+        return mEl;
+      }),
+      ".list"
+    );
+    this.setContent("list", modelList);
+  }
+};
+
+// src/views/Nav.ts
+var Nav = class extends View {
+  static get id() {
+    return "nav";
+  }
+  get id() {
+    return Nav.id;
+  }
+  mount() {
+    return [
+      this.eventListener("back", "click", () => {
+        this.dispatchEvent("GoBack");
+      })
+    ];
+  }
+  updated() {
+    this.el("back").classList.toggle(
+      "hidden",
+      this.state.showingScreen === "Models"
+    );
   }
 };
 
@@ -60264,12 +60463,6 @@ var getMap = async (db, name7) => {
     oMap.set(obj.id, { ...obj.data(), guid: obj.id });
   });
   return oMap;
-};
-var invariant = (i, m) => {
-  if (!i) {
-    throw new Error(m);
-  }
-  return i;
 };
 var getRemoteState = async (db) => {
   const [models, inputs, channels, curves2] = await Promise.all([
@@ -60299,8 +60492,10 @@ var getRemoteState = async (db) => {
     models: [],
     channels: [],
     inputs: [],
+    showingScreen: "Models",
+    expandedChannels: /* @__PURE__ */ new Set(),
     chartInputs: { days: 365, offsetDay: 0 },
-    chart: { inputs: [], channels: [], profitLoss: [] }
+    chart: { data: [], profitLoss: [] }
   };
   models.forEach((model) => {
     state.models.push({
@@ -60323,28 +60518,15 @@ var defaultAccumulator = (currentCount) => ({
 var updateChart = (state) => {
   const { model, days, offsetDay } = state.chartInputs;
   if (model) {
-    const channels = [];
-    const inputs = [];
+    const data = [];
     const profitLoss = [];
     let acc = {};
     for (let day = offsetDay; day < days; day++) {
       let dayRevenue = 0;
-      model.channels.forEach((c4, channelIndex) => {
-        if (!channels[channelIndex]) {
-          channels[channelIndex] = {
-            name: c4.name,
-            values: []
-          };
-        }
+      model.channels.forEach((c4) => {
         let channelCount = 0;
         let channelRevenue = 0;
-        c4.inputs.forEach((i, inputIndex) => {
-          if (!inputs[inputIndex]) {
-            inputs[inputIndex] = {
-              name: c4.name,
-              values: []
-            };
-          }
+        c4.inputs.forEach((i) => {
           const dailyGrowth = i.growthPercent / i.growthFreq;
           if (!acc[i.guid]) {
             acc[i.guid] = defaultAccumulator(i.seed);
@@ -60359,32 +60541,26 @@ var updateChart = (state) => {
           const revenue = count2 / i.avgFreq * i.avgSize;
           channelRevenue += revenue;
           channelCount += count2;
-          inputs[inputIndex].values.push({
-            group: i.name,
+          data.push({
+            input: i.name,
+            channel: c4.name,
             day,
             count: count2,
             revenue
           });
         });
         dayRevenue += channelRevenue;
-        channels[channelIndex].values.push({
-          group: c4.name,
-          count: channelCount,
-          day,
-          revenue: channelRevenue
-        });
       });
       profitLoss.push({ total: dayRevenue });
     }
     state.chart = {
-      channels,
-      inputs,
+      data,
       profitLoss
     };
   }
   return state;
 };
-var initUI = cre8([ModelView]);
+var initUI = cre8([Nav, ModelView, ModelListView]);
 window.addEventListener("load", async () => {
   var ui = new auth.AuthUI(firebase.auth());
   const auth2 = firebase.auth();
@@ -60397,11 +60573,54 @@ window.addEventListener("load", async () => {
   }
   const db = firebase.firestore(app);
   const state = await getRemoteState(db);
-  state.chartInputs.model = state.models.at(0);
-  console.log(state);
   updateChart(state);
-  console.log(state);
   const upd8 = initUI(state, (event) => {
+    matchEnum(event, (ev, value) => {
+      switch (ev) {
+        case "GoBack": {
+          switch (state.showingScreen) {
+            case "Model":
+              state.showingScreen = "Models";
+              break;
+            case "Inputs":
+              state.showingScreen = "Channel";
+              break;
+            case "Channels":
+              state.showingScreen = "Model";
+              break;
+            case "Input":
+              state.showingScreen = "Inputs";
+              break;
+          }
+          break;
+        }
+        case "ShowModel": {
+          const model = state.models.find((m) => m.guid === value.guid);
+          if (model) {
+            state.chartInputs.model = model;
+            updateChart(state);
+            state.showingScreen = "Model";
+          }
+          break;
+        }
+        case "ToggleChannelExpanded": {
+          if (state.expandedChannels.has(value.guid)) {
+            state.expandedChannels.delete(value.guid);
+          } else {
+            state.expandedChannels.add(value.guid);
+          }
+          break;
+        }
+        case "ShowChannel": {
+          const channel = state.channels.find((m) => m.guid === value.guid);
+          if (channel) {
+            state.showingChannel = channel;
+            state.showingScreen = "Channel";
+          }
+          break;
+        }
+      }
+    });
     upd8(state);
     import_feather_icons.default.replace();
   });

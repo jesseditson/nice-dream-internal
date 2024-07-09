@@ -28,54 +28,70 @@
   <body>
     
 
-<h1 class="text-3xl font-bold">
+<h1 id="nav" class="text-3xl font-bold flex gap-4">
+  <button id="back" class="hidden">
+    <i data-feather="chevron-left"></i>
+  </button>
   Nice Dream
 </h1>
 
-<div id="firebaseui-auth-container"></div><div id="model">
-  <div id="chart"></div>
+<div id="firebaseui-auth-container"></div>
+
+<div id="model" class="w-full hidden">
+  <div id="chart" class="w-full"></div>
+  <div id="channels">
+    <div data-template="collection" class="flex flex-col gap-4">
+  <div class="w-full flex justify-between">
+    <h2 class="title text-bold text-2xl">Channels</h2>
+    <button class="add">
+      <i data-feather="plus-square"></i>
+    </button>
+  </div>
+  <ul class="collection flex flex-col gap-2">
+    <li data-template="collection-row" class="flex flex-col border-b last:border-b-0">
+      <div class="group px-4 py-2 flex justify-between">
+        <div class="name flex-1">Loading...</div>
+        <div class="buttons hidden group-hover:flex gap-4">
+          <button class="delete" title="delete">
+            <i data-feather="trash-2"></i>
+          </button>
+          <button class="edit" title="edit">
+            <i data-feather="edit-2"></i>
+          </button>
+          <button class="toggle" title="show/hide">
+            <i data-feather="chevron-right"></i>
+          </button>
+        </div>
+      </div>
+      <div>
+        <ul class="items hidden group px-4 py-2 flex flex-col justify-between border-b last:border-b-0">
+          <li data-template="collection-item">
+            <div class="name flex-1">Loading...</div>
+          </li>
+        </ul>
+      </div>
+    </li>
+  </ul>
 </div>
 
+  </div>
+</div>
 
-
-<ul data-template="list" class="flex flex-col gap-2">
-  <li data-template="list-item" class="px-4 py-2 flex border-b last:border-b-0">
-    <button class="flex justify-between flex-1" title="Loading...">
-      <div class="name">Loading...</div>
-      <i data-feather="chevron-right"></i>
-    </button>
-  </li>
-</ul>
-
-<ul data-template="collection" class="flex flex-col gap-2">
-  <li data-template="collection-item" class="group px-4 py-2 flex justify-between border-b last:border-b-0">
-    <div class="name flex-1">Loading...</div>
-    <div class="buttons hidden group-hover:flex gap-4">
-      <button class="delete" title="delete">
-        <i data-feather="trash-2"></i>
-      </button>
-      <button class="edit" title="edit">
-        <i data-feather="edit-2"></i>
-      </button>
-    </div>
-  </li>
-</ul>
-
-<div data-template="quick-search" class="">
-  <input
-    class=""
-    type="text"
-    incremental="true"
-    placeholder="Search..." />
-  <ul class="results flex flex-col gap-2">
-    <li data-template="result" class="border-bottom last:border-bottom-0">
-      <div class="name"></div>
-      <button class="select">
+<div id="model-list" class="hidden">
+  <div id="list">
+    <div data-template="list" class="flex flex-col gap-4">
+  <h2 class="title text-bold text-2xl">Models</h2>
+  <ul class="list flex flex-col gap-2">
+    <li data-template="list-item" class="px-4 py-2 flex border-b last:border-b-0">
+      <button class="button flex justify-between flex-1" title="Loading...">
+        <div class="name">Loading...</div>
         <i data-feather="chevron-right"></i>
       </button>
     </li>
   </ul>
-  <div class="create-result"></div>
+</div>
+
+  </div>
 </div>
 
 
