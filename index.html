@@ -19,14 +19,10 @@
     <link rel="stylesheet" href="/style.css">
 
     <meta name="theme-color" content="#fafafa">
-    <link
-      type="text/css"
-      rel="stylesheet"
-      href="https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.css" />
   </head>
 
-  <body>
-    <div class="px-8 py-2">
+  <body class="h-full">
+    <div class="px-8 py-2 h-full flex flex-col">
       
 
 <h1 id="nav" class="text-3xl font-bold flex gap-4">
@@ -37,6 +33,28 @@
 </h1>
 
 <div id="firebaseui-auth-container"></div>
+
+<div id="signin" class="flex flex-1 justify-center items-center">
+  <div
+    id="g_id_onload"
+    data-client_id="374023849729-1qhfa3hq4ut4svc7io3u7k9f414he4p8.apps.googleusercontent.com"
+    data-context="signin"
+    data-ux_mode="popup"
+    data-callback="googleAuthComplete"
+    data-auto_select="true"
+    data-itp_support="true"></div>
+
+  <div
+    class="g_id_signin"
+    data-type="standard"
+    data-shape="rectangular"
+    data-theme="outline"
+    data-text="signin_with"
+    data-size="large"
+    data-logo_alignment="left"></div>
+</div>
+
+<script src="https://accounts.google.com/gsi/client" async></script>
 
 <div id="model-list" class="hidden">
   <div id="list">
@@ -56,6 +74,31 @@
 </div>
 
 <div id="model" class="w-full hidden">
+  <div class="flex justify-between">
+    <div class="flex gap-2">
+      <label>offset <input
+          id="offset"
+          type="range"
+          min="0"
+          max="1095"
+          value="0" /></label>
+      <label>days <input
+          id="days"
+          type="range"
+          min="0"
+          max="1095"
+          value="0" /></label>
+    </div>
+    <div class="grid grid-cols-2">
+      profit:
+      <span id="profit"></span>
+      loss:
+      <span id="loss"></span>
+      net:
+      <span id="net"></span>
+    </div>
+  </div>
+
   <div id="chart" class="w-full"></div>
   <div id="channels">
     <div data-template="collection" class="flex flex-col gap-4">
