@@ -43,6 +43,7 @@ export type State = {
   };
   showingChannel?: Channel;
   showingInput?: Input;
+  quickSearch?: "Channel" | "Input";
   showingScreen:
     | "Models"
     | "Inputs"

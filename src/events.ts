@@ -24,11 +24,12 @@ export type NDEvent =
       ShowInput: { guid: string };
     }
   | {
-      ChooseChannel: { modelGuid: string };
+      ChooseChannel: { guid: string };
     }
   | {
-      ChooseInput: { channelGuid: string };
+      ChooseInput: { guid: string };
     }
+  | "CancelSearch"
   | {
       AddChannel: { modelGuid: string; channelGuid: string };
     }

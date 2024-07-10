@@ -1,16 +1,21 @@
-<div data-template="quick-search" class="">
-  <input
-    class=""
-    type="text"
-    incremental="true"
-    placeholder="Search..." />
-  <ul class="results flex flex-col gap-2">
-    <li data-template="result" class="border-bottom last:border-bottom-0">
-      <div class="name"></div>
-      <button class="select">
-        <i data-feather="chevron-right"></i>
-      </button>
-    </li>
-  </ul>
-  <div class="create-result"></div>
+<div id="quick-search" class="w-full h-full top-0 left-0 fixed backdrop-blur-sm flex items-center justify-center z-20">
+  <div id="modal" class="ring-gray-200 ring-1 rounded-lg p-1 overflow-hidden flex flex-col min-w-72 shadow-md bg-white">
+    <h2 id="title" class="p-4 text-lg text-center font-bold text-gray-600"></h2>
+    <input
+      id="typeahead"
+      class="px-5 py-3 border-b-1"
+      type="text"
+      incremental="true"
+      autofocus="true"
+      placeholder="Search..." />
+    <ul id="results" class="flex flex-col gap-2">
+      <li data-template="result" class="result cursor-pointer border-b-1 flex justify-between p-4">
+        <div class="name"></div>
+        <button class="select">
+          <i data-feather="chevron-right"></i>
+        </button>
+      </li>
+    </ul>
+    <div id="create-result" class="cursor-pointer p-4"></div>
+  </div>
 </div>

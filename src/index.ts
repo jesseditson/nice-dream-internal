@@ -9,6 +9,14 @@ import { ModelView } from "./views/ModelView";
 import { ModelListView } from "./views/ModelListView";
 import { invariant, matchEnum } from "./utils";
 import { Nav } from "./views/Nav";
+import { QuickSearch } from "./views/QuickSearch";
+
+const initUI = cre8<State, NDEvent>([
+  Nav,
+  ModelView,
+  ModelListView,
+  QuickSearch,
+]);
 
 const app = firebase.initializeApp({
   apiKey: "AIzaSyCjURzjH7ZuL7H5qmnqXVypuw9PxN-0CnU",
@@ -64,6 +72,7 @@ const getRemoteState = async (
     models: [],
     channels: [],
     inputs: [],
+    quickSearch: "Channel",
     showingScreen: "Models",
     expandedChannels: new Set(),
     chartInputs: { days: 365, offsetDay: 0 },
@@ -143,8 +152,6 @@ const updateChart = (state: State): State => {
   return state;
 };
 
-const initUI = cre8<State, NDEvent>([Nav, ModelView, ModelListView]);
-
 window.addEventListener("load", async () => {
   var ui = new firebaseui.auth.AuthUI(firebase.auth());
   const auth = firebase.auth();
@@ -204,6 +211,18 @@ window.addEventListener("load", async () => {
             state.showingChannel = channel;
             state.showingScreen = "Channel";
           }
+          break;
+        }
+        case "ChooseChannel": {
+          state.quickSearch = "Channel";
+          break;
+        }
+        case "ChooseInput": {
+          state.quickSearch = "Input";
+          break;
+        }
+        case "CancelSearch": {
+          state.quickSearch = undefined;
           break;
         }
       }
