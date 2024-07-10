@@ -45715,8 +45715,8 @@ var named = {
   yellowgreen: 10145074
 };
 define_default(Color, color, {
-  copy(channels) {
-    return Object.assign(new this.constructor(), this, channels);
+  copy(channels2) {
+    return Object.assign(new this.constructor(), this, channels2);
   },
   displayable() {
     return this.rgb().displayable();
@@ -53878,10 +53878,10 @@ function composeInitializer(i1, i2) {
     return i2 === null ? void 0 : i2;
   if (i2 == null)
     return i1 === null ? void 0 : i1;
-  return function(data, facets, channels, ...args) {
+  return function(data, facets, channels2, ...args) {
     let c1, d1, f1, c22, d2, f2;
-    ({ data: d1 = data, facets: f1 = facets, channels: c1 } = i1.call(this, data, facets, channels, ...args));
-    ({ data: d2 = d1, facets: f2 = f1, channels: c22 } = i2.call(this, d1, f1, { ...channels, ...c1 }, ...args));
+    ({ data: d1 = data, facets: f1 = facets, channels: c1 } = i1.call(this, data, facets, channels2, ...args));
+    ({ data: d2 = d1, facets: f2 = f1, channels: c22 } = i2.call(this, d1, f1, { ...channels2, ...c1 }, ...args));
     return { data: d2, facets: f2, channels: { ...c1, ...c22 } };
   };
 }
@@ -53923,14 +53923,14 @@ function sortValue(value) {
         throw new Error(`invalid order: ${order}`);
     }
   }
-  return (data, facets, channels) => {
+  return (data, facets, channels2) => {
     let V;
     if (channel === void 0) {
       V = valueof(data, value);
     } else {
-      if (channels === void 0)
+      if (channels2 === void 0)
         throw new Error("channel sort requires an initializer");
-      V = channels[channel];
+      V = channels2[channel];
       if (!V)
         return {};
       V = V.value;
@@ -53949,19 +53949,19 @@ function hasOutput(outputs, ...names) {
   }
   return false;
 }
-function maybeOutputs(outputs, inputs, asOutput = maybeOutput) {
+function maybeOutputs(outputs, inputs2, asOutput = maybeOutput) {
   const entries = Object.entries(outputs);
-  if (inputs.title != null && outputs.title === void 0)
+  if (inputs2.title != null && outputs.title === void 0)
     entries.push(["title", reduceTitle]);
-  if (inputs.href != null && outputs.href === void 0)
+  if (inputs2.href != null && outputs.href === void 0)
     entries.push(["href", reduceFirst]);
-  return entries.filter(([, reduce]) => reduce !== void 0).map(([name7, reduce]) => reduce === null ? nullOutput(name7) : asOutput(name7, reduce, inputs));
+  return entries.filter(([, reduce]) => reduce !== void 0).map(([name7, reduce]) => reduce === null ? nullOutput(name7) : asOutput(name7, reduce, inputs2));
 }
-function maybeOutput(name7, reduce, inputs, asEvaluator = maybeEvaluator) {
+function maybeOutput(name7, reduce, inputs2, asEvaluator = maybeEvaluator) {
   let scale;
   if (isObject2(reduce) && "reduce" in reduce)
     scale = reduce.scale, reduce = reduce.reduce;
-  const evaluator = asEvaluator(name7, reduce, inputs);
+  const evaluator = asEvaluator(name7, reduce, inputs2);
   const [output, setOutput] = column(evaluator.label);
   let O2;
   return {
@@ -53985,8 +53985,8 @@ function nullOutput(name7) {
   }, reduce() {
   } };
 }
-function maybeEvaluator(name7, reduce, inputs, asReduce = maybeReduce) {
-  const input = maybeInput(name7, inputs);
+function maybeEvaluator(name7, reduce, inputs2, asReduce = maybeReduce) {
+  const input = maybeInput(name7, inputs2);
   const reducer2 = asReduce(reduce, input);
   let V, context;
   return {
@@ -54062,9 +54062,9 @@ function maybeReduce(reduce, value, fallback = invalidReduce) {
 function invalidReduce(reduce) {
   throw new Error(`invalid reduce: ${reduce}`);
 }
-function maybeSubgroup(outputs, inputs) {
-  for (const name7 in inputs) {
-    const value = inputs[name7];
+function maybeSubgroup(outputs, inputs2) {
+  for (const name7 in inputs2) {
+    const value = inputs2[name7];
     if (value !== void 0 && !outputs.some((o) => o.name === name7)) {
       return value;
     }
@@ -54178,19 +54178,19 @@ function createChannel(data, { scale, type: type2, value, filter: filter2, hint,
     hint
   });
 }
-function createChannels(channels, data) {
+function createChannels(channels2, data) {
   return Object.fromEntries(
-    Object.entries(channels).map(([name7, channel]) => [name7, createChannel(data, channel, name7)])
+    Object.entries(channels2).map(([name7, channel]) => [name7, createChannel(data, channel, name7)])
   );
 }
-function valueObject(channels, scales) {
+function valueObject(channels2, scales) {
   const values2 = Object.fromEntries(
-    Object.entries(channels).map(([name7, { scale: scaleName, value }]) => {
+    Object.entries(channels2).map(([name7, { scale: scaleName, value }]) => {
       const scale = scaleName == null ? null : scales[scaleName];
       return [name7, scale == null ? value : map2(value, scale)];
     })
   );
-  values2.channels = channels;
+  values2.channels = channels2;
   return values2;
 }
 function inferChannelScale(name7, channel) {
@@ -54226,7 +54226,7 @@ function inferChannelScale(name7, channel) {
   }
   return channel;
 }
-function channelDomain(data, facets, channels, facetChannels, options) {
+function channelDomain(data, facets, channels2, facetChannels, options) {
   const { order: defaultOrder, reverse: defaultReverse, reduce: defaultReduce = true, limit: defaultLimit } = options;
   for (const x3 in options) {
     if (!registry.has(x3))
@@ -54238,7 +54238,7 @@ function channelDomain(data, facets, channels, facetChannels, options) {
     order = order === void 0 ? negate !== (y2 === "width" || y2 === "height") ? descendingGroup : ascendingGroup : maybeOrder(order);
     if (reduce == null || reduce === false)
       continue;
-    const X3 = x3 === "fx" || x3 === "fy" ? reindexFacetChannel(facets, facetChannels[x3]) : findScaleChannel(channels, x3);
+    const X3 = x3 === "fx" || x3 === "fy" ? reindexFacetChannel(facets, facetChannels[x3]) : findScaleChannel(channels2, x3);
     if (!X3)
       throw new Error(`missing channel for scale: ${x3}`);
     const XV = X3.value;
@@ -54253,7 +54253,7 @@ function channelDomain(data, facets, channels, facetChannels, options) {
         return domain;
       };
     } else {
-      const YV = y2 === "data" ? data : y2 === "height" ? difference(channels, "y1", "y2") : y2 === "width" ? difference(channels, "x1", "x2") : values(channels, y2, y2 === "y" ? "y2" : y2 === "x" ? "x2" : void 0);
+      const YV = y2 === "data" ? data : y2 === "height" ? difference(channels2, "y1", "y2") : y2 === "width" ? difference(channels2, "x1", "x2") : values(channels2, y2, y2 === "y" ? "y2" : y2 === "x" ? "x2" : void 0);
       const reducer2 = maybeReduce(reduce === true ? "max" : reduce, YV);
       X3.domain = () => {
         let domain = rollups(
@@ -54272,9 +54272,9 @@ function channelDomain(data, facets, channels, facetChannels, options) {
     }
   }
 }
-function findScaleChannel(channels, scale) {
-  for (const name7 in channels) {
-    const channel = channels[name7];
+function findScaleChannel(channels2, scale) {
+  for (const name7 in channels2) {
+    const channel = channels2[name7];
     if (channel.scale === scale)
       return channel;
   }
@@ -54292,15 +54292,15 @@ function reindexFacetChannel(facets, channel) {
   }
   return channel;
 }
-function difference(channels, k1, k22) {
-  const X12 = values(channels, k1);
-  const X23 = values(channels, k22);
+function difference(channels2, k1, k22) {
+  const X12 = values(channels2, k1);
+  const X23 = values(channels2, k22);
   return map2(X23, (x22, i) => Math.abs(x22 - X12[i]), Float64Array);
 }
-function values(channels, name7, alias) {
-  let channel = channels[name7];
+function values(channels2, name7, alias) {
+  let channel = channels2[name7];
   if (!channel && alias !== void 0)
-    channel = channels[alias];
+    channel = channels2[alias];
   if (channel)
     return channel.value;
   throw new Error(`missing channel: ${name7}`);
@@ -54322,8 +54322,8 @@ function ascendingGroup([ak, av], [bk, bv]) {
 function descendingGroup([ak, av], [bk, bv]) {
   return descendingDefined(av, bv) || ascendingDefined2(ak, bk);
 }
-function getSource(channels, key) {
-  let channel = channels[key];
+function getSource(channels2, key) {
+  let channel = channels2[key];
   if (!channel)
     return;
   while (channel.source)
@@ -54542,17 +54542,17 @@ function maybeInterpolator(interpolate) {
     throw new Error(`unknown interpolator: ${i}`);
   return interpolators.get(i);
 }
-function createScaleQ(key, scale, channels, {
+function createScaleQ(key, scale, channels2, {
   type: type2,
   nice: nice2,
   clamp,
   zero: zero3,
-  domain = inferAutoDomain(key, channels),
+  domain = inferAutoDomain(key, channels2),
   unknown,
   round,
   scheme: scheme28,
   interval: interval2,
-  range: range3 = registry.get(key) === radius ? inferRadialRange(channels, domain) : registry.get(key) === length2 ? inferLengthRange(channels, domain) : registry.get(key) === opacity ? unit2 : void 0,
+  range: range3 = registry.get(key) === radius ? inferRadialRange(channels2, domain) : registry.get(key) === length2 ? inferLengthRange(channels2, domain) : registry.get(key) === opacity ? unit2 : void 0,
   interpolate = registry.get(key) === color2 ? scheme28 == null && range3 !== void 0 ? rgb_default : quantitativeScheme(scheme28 !== void 0 ? scheme28 : type2 === "cyclical" ? "rainbow" : "turbo") : round ? round_default : number_default,
   reverse: reverse2
 }) {
@@ -54611,28 +54611,28 @@ function createScaleQ(key, scale, channels, {
 function maybeNice(nice2, type2) {
   return nice2 === true ? void 0 : typeof nice2 === "number" ? nice2 : maybeNiceInterval(nice2, type2);
 }
-function createScaleLinear(key, channels, options) {
-  return createScaleQ(key, linear2(), channels, options);
+function createScaleLinear(key, channels2, options) {
+  return createScaleQ(key, linear2(), channels2, options);
 }
-function createScaleSqrt(key, channels, options) {
-  return createScalePow(key, channels, { ...options, exponent: 0.5 });
+function createScaleSqrt(key, channels2, options) {
+  return createScalePow(key, channels2, { ...options, exponent: 0.5 });
 }
-function createScalePow(key, channels, { exponent = 1, ...options }) {
-  return createScaleQ(key, pow2().exponent(exponent), channels, { ...options, type: "pow" });
+function createScalePow(key, channels2, { exponent = 1, ...options }) {
+  return createScaleQ(key, pow2().exponent(exponent), channels2, { ...options, type: "pow" });
 }
-function createScaleLog(key, channels, { base = 10, domain = inferLogDomain(channels), ...options }) {
-  return createScaleQ(key, log2().base(base), channels, { ...options, domain });
+function createScaleLog(key, channels2, { base = 10, domain = inferLogDomain(channels2), ...options }) {
+  return createScaleQ(key, log2().base(base), channels2, { ...options, domain });
 }
-function createScaleSymlog(key, channels, { constant: constant2 = 1, ...options }) {
-  return createScaleQ(key, symlog().constant(constant2), channels, options);
+function createScaleSymlog(key, channels2, { constant: constant2 = 1, ...options }) {
+  return createScaleQ(key, symlog().constant(constant2), channels2, options);
 }
-function createScaleQuantile(key, channels, {
+function createScaleQuantile(key, channels2, {
   range: range3,
   quantiles = range3 === void 0 ? 5 : (range3 = [...range3]).length,
   // deprecated; use n instead
   n = quantiles,
   scheme: scheme28 = "rdylbu",
-  domain = inferQuantileDomain(channels),
+  domain = inferQuantileDomain(channels2),
   unknown,
   interpolate,
   reverse: reverse2
@@ -54643,13 +54643,13 @@ function createScaleQuantile(key, channels, {
   if (domain.length > 0) {
     domain = quantile2(domain, range3 === void 0 ? { length: n } : range3).quantiles();
   }
-  return createScaleThreshold(key, channels, { domain, range: range3, reverse: reverse2, unknown });
+  return createScaleThreshold(key, channels2, { domain, range: range3, reverse: reverse2, unknown });
 }
-function createScaleQuantize(key, channels, {
+function createScaleQuantize(key, channels2, {
   range: range3,
   n = range3 === void 0 ? 5 : (range3 = [...range3]).length,
   scheme: scheme28 = "rdylbu",
-  domain = inferAutoDomain(key, channels),
+  domain = inferAutoDomain(key, channels2),
   unknown,
   interpolate,
   reverse: reverse2
@@ -54671,9 +54671,9 @@ function createScaleQuantize(key, channels, {
   }
   if (orderof(arrayify2(domain)) < 0)
     thresholds.reverse();
-  return createScaleThreshold(key, channels, { domain: thresholds, range: range3, reverse: reverse2, unknown });
+  return createScaleThreshold(key, channels2, { domain: thresholds, range: range3, reverse: reverse2, unknown });
 }
-function createScaleThreshold(key, channels, {
+function createScaleThreshold(key, channels2, {
   domain = [0],
   // explicit thresholds in ascending order
   unknown,
@@ -54706,50 +54706,50 @@ function isOrdered(domain, sign3) {
 function createScaleIdentity(key) {
   return { type: "identity", scale: hasNumericRange(registry.get(key)) ? identity4() : (d) => d };
 }
-function inferDomain(channels, f = finite) {
-  return channels.length ? [
-    min(channels, ({ value }) => value === void 0 ? value : min(value, f)),
-    max(channels, ({ value }) => value === void 0 ? value : max(value, f))
+function inferDomain(channels2, f = finite) {
+  return channels2.length ? [
+    min(channels2, ({ value }) => value === void 0 ? value : min(value, f)),
+    max(channels2, ({ value }) => value === void 0 ? value : max(value, f))
   ] : [0, 1];
 }
-function inferAutoDomain(key, channels) {
+function inferAutoDomain(key, channels2) {
   const type2 = registry.get(key);
-  return (type2 === radius || type2 === opacity || type2 === length2 ? inferZeroDomain : inferDomain)(channels);
+  return (type2 === radius || type2 === opacity || type2 === length2 ? inferZeroDomain : inferDomain)(channels2);
 }
-function inferZeroDomain(channels) {
-  return [0, channels.length ? max(channels, ({ value }) => value === void 0 ? value : max(value, finite)) : 1];
+function inferZeroDomain(channels2) {
+  return [0, channels2.length ? max(channels2, ({ value }) => value === void 0 ? value : max(value, finite)) : 1];
 }
-function inferRadialRange(channels, domain) {
-  const hint = channels.find(({ radius: radius2 }) => radius2 !== void 0);
+function inferRadialRange(channels2, domain) {
+  const hint = channels2.find(({ radius: radius2 }) => radius2 !== void 0);
   if (hint !== void 0)
     return [0, hint.radius];
-  const h25 = quantile(channels, 0.5, ({ value }) => value === void 0 ? NaN : quantile(value, 0.25, positive));
+  const h25 = quantile(channels2, 0.5, ({ value }) => value === void 0 ? NaN : quantile(value, 0.25, positive));
   const range3 = domain.map((d) => 3 * Math.sqrt(d / h25));
   const k3 = 30 / max(range3);
   return k3 < 1 ? range3.map((r) => r * k3) : range3;
 }
-function inferLengthRange(channels, domain) {
-  const h50 = median(channels, ({ value }) => value === void 0 ? NaN : median(value, Math.abs));
+function inferLengthRange(channels2, domain) {
+  const h50 = median(channels2, ({ value }) => value === void 0 ? NaN : median(value, Math.abs));
   const range3 = domain.map((d) => 12 * d / h50);
   const k3 = 60 / max(range3);
   return k3 < 1 ? range3.map((r) => r * k3) : range3;
 }
-function inferLogDomain(channels) {
-  for (const { value } of channels) {
+function inferLogDomain(channels2) {
+  for (const { value } of channels2) {
     if (value !== void 0) {
       for (let v2 of value) {
         if (v2 > 0)
-          return inferDomain(channels, positive);
+          return inferDomain(channels2, positive);
         if (v2 < 0)
-          return inferDomain(channels, negative);
+          return inferDomain(channels2, negative);
       }
     }
   }
   return [1, 10];
 }
-function inferQuantileDomain(channels) {
+function inferQuantileDomain(channels2) {
   const domain = [];
-  for (const { value } of channels) {
+  for (const { value } of channels2) {
     if (value === void 0)
       continue;
     for (const v2 of value)
@@ -54779,11 +54779,11 @@ function warn(message) {
 }
 
 // node_modules/@observablehq/plot/src/scales/diverging.js
-function createScaleD(key, scale, transform2, channels, {
+function createScaleD(key, scale, transform2, channels2, {
   type: type2,
   nice: nice2,
   clamp,
-  domain = inferDomain(channels),
+  domain = inferDomain(channels2),
   unknown,
   pivot = 0,
   scheme: scheme28,
@@ -54825,31 +54825,31 @@ function createScaleD(key, scale, transform2, channels, {
     scale.nice(nice2);
   return { type: type2, domain: [min4, max3], pivot, interpolate, scale };
 }
-function createScaleDiverging(key, channels, options) {
-  return createScaleD(key, diverging(), transformIdentity, channels, options);
+function createScaleDiverging(key, channels2, options) {
+  return createScaleD(key, diverging(), transformIdentity, channels2, options);
 }
-function createScaleDivergingSqrt(key, channels, options) {
-  return createScaleDivergingPow(key, channels, { ...options, exponent: 0.5 });
+function createScaleDivergingSqrt(key, channels2, options) {
+  return createScaleDivergingPow(key, channels2, { ...options, exponent: 0.5 });
 }
-function createScaleDivergingPow(key, channels, { exponent = 1, ...options }) {
-  return createScaleD(key, divergingPow().exponent(exponent = +exponent), transformPow2(exponent), channels, {
+function createScaleDivergingPow(key, channels2, { exponent = 1, ...options }) {
+  return createScaleD(key, divergingPow().exponent(exponent = +exponent), transformPow2(exponent), channels2, {
     ...options,
     type: "diverging-pow"
   });
 }
-function createScaleDivergingLog(key, channels, { base = 10, pivot = 1, domain = inferDomain(channels, pivot < 0 ? negative : positive), ...options }) {
-  return createScaleD(key, divergingLog().base(base = +base), transformLog2, channels, {
+function createScaleDivergingLog(key, channels2, { base = 10, pivot = 1, domain = inferDomain(channels2, pivot < 0 ? negative : positive), ...options }) {
+  return createScaleD(key, divergingLog().base(base = +base), transformLog2, channels2, {
     domain,
     pivot,
     ...options
   });
 }
-function createScaleDivergingSymlog(key, channels, { constant: constant2 = 1, ...options }) {
+function createScaleDivergingSymlog(key, channels2, { constant: constant2 = 1, ...options }) {
   return createScaleD(
     key,
     divergingSymlog().constant(constant2 = +constant2),
     transformSymlog2(constant2),
-    channels,
+    channels2,
     options
   );
 }
@@ -54895,22 +54895,22 @@ function transformSymlog2(constant2) {
 }
 
 // node_modules/@observablehq/plot/src/scales/temporal.js
-function createScaleT(key, scale, channels, options) {
-  return createScaleQ(key, scale, channels, options);
+function createScaleT(key, scale, channels2, options) {
+  return createScaleQ(key, scale, channels2, options);
 }
-function createScaleTime(key, channels, options) {
-  return createScaleT(key, time(), channels, options);
+function createScaleTime(key, channels2, options) {
+  return createScaleT(key, time(), channels2, options);
 }
-function createScaleUtc(key, channels, options) {
-  return createScaleT(key, utcTime(), channels, options);
+function createScaleUtc(key, channels2, options) {
+  return createScaleT(key, utcTime(), channels2, options);
 }
 
 // node_modules/@observablehq/plot/src/scales/ordinal.js
 var ordinalImplicit = Symbol("ordinal");
-function createScaleO(key, scale, channels, { type: type2, interval: interval2, domain, range: range3, reverse: reverse2, hint }) {
+function createScaleO(key, scale, channels2, { type: type2, interval: interval2, domain, range: range3, reverse: reverse2, hint }) {
   interval2 = maybeRangeInterval(interval2, type2);
   if (domain === void 0)
-    domain = inferDomain2(channels, interval2, key);
+    domain = inferDomain2(channels2, interval2, key);
   if (type2 === "categorical" || type2 === ordinalImplicit)
     type2 = "ordinal";
   if (reverse2)
@@ -54923,13 +54923,13 @@ function createScaleO(key, scale, channels, { type: type2, interval: interval2, 
   }
   return { type: type2, domain, range: range3, scale, hint, interval: interval2 };
 }
-function createScaleOrdinal(key, channels, { type: type2, interval: interval2, domain, range: range3, scheme: scheme28, unknown, ...options }) {
+function createScaleOrdinal(key, channels2, { type: type2, interval: interval2, domain, range: range3, scheme: scheme28, unknown, ...options }) {
   interval2 = maybeRangeInterval(interval2, type2);
   if (domain === void 0)
-    domain = inferDomain2(channels, interval2, key);
+    domain = inferDomain2(channels2, interval2, key);
   let hint;
   if (registry.get(key) === symbol) {
-    hint = inferSymbolHint(channels);
+    hint = inferSymbolHint(channels2);
     range3 = range3 === void 0 ? inferSymbolRange(hint) : map2(range3, maybeSymbol);
   } else if (registry.get(key) === color2) {
     if (range3 === void 0 && (type2 === "ordinal" || type2 === ordinalImplicit)) {
@@ -54953,12 +54953,12 @@ function createScaleOrdinal(key, channels, { type: type2, interval: interval2, d
   if (unknown === implicit) {
     throw new Error(`implicit unknown on ${key} scale is not supported`);
   }
-  return createScaleO(key, ordinal().unknown(unknown), channels, { ...options, type: type2, domain, range: range3, hint });
+  return createScaleO(key, ordinal().unknown(unknown), channels2, { ...options, type: type2, domain, range: range3, hint });
 }
-function createScalePoint(key, channels, { align = 0.5, padding = 0.5, ...options }) {
-  return maybeRound(point().align(align).padding(padding), channels, options, key);
+function createScalePoint(key, channels2, { align = 0.5, padding = 0.5, ...options }) {
+  return maybeRound(point().align(align).padding(padding), channels2, options, key);
 }
-function createScaleBand(key, channels, {
+function createScaleBand(key, channels2, {
   align = 0.5,
   padding = 0.1,
   paddingInner = padding,
@@ -54967,22 +54967,22 @@ function createScaleBand(key, channels, {
 }) {
   return maybeRound(
     band().align(align).paddingInner(paddingInner).paddingOuter(paddingOuter),
-    channels,
+    channels2,
     options,
     key
   );
 }
-function maybeRound(scale, channels, options, key) {
+function maybeRound(scale, channels2, options, key) {
   let { round } = options;
   if (round !== void 0)
     scale.round(round = !!round);
-  scale = createScaleO(key, scale, channels, options);
+  scale = createScaleO(key, scale, channels2, options);
   scale.round = round;
   return scale;
 }
-function inferDomain2(channels, interval2, key) {
+function inferDomain2(channels2, interval2, key) {
   const values2 = new InternSet();
-  for (const { value, domain } of channels) {
+  for (const { value, domain } of channels2) {
     if (domain !== void 0)
       return domain();
     if (value === void 0)
@@ -54999,9 +54999,9 @@ function inferDomain2(channels, interval2, key) {
   }
   return sort(values2, ascendingDefined2);
 }
-function inferHint(channels, key) {
+function inferHint(channels2, key) {
   let value;
-  for (const { hint } of channels) {
+  for (const { hint } of channels2) {
     const candidate = hint?.[key];
     if (candidate === void 0)
       continue;
@@ -55012,10 +55012,10 @@ function inferHint(channels, key) {
   }
   return value;
 }
-function inferSymbolHint(channels) {
+function inferSymbolHint(channels2) {
   return {
-    fill: inferHint(channels, "fill"),
-    stroke: inferHint(channels, "stroke")
+    fill: inferHint(channels2, "fill"),
+    stroke: inferHint(channels2, "stroke")
   };
 }
 function inferSymbolRange(hint) {
@@ -55041,9 +55041,9 @@ function createScales(channelsByScale, {
   ...options
 } = {}) {
   const scales = {};
-  for (const [key, channels] of channelsByScale) {
+  for (const [key, channels2] of channelsByScale) {
     const scaleOptions = options[key];
-    const scale = createScale(key, channels, {
+    const scale = createScale(key, channels2, {
       round: registry.get(key) === position ? round : void 0,
       // only for position
       nice: nice2,
@@ -55074,7 +55074,7 @@ function createScales(channelsByScale, {
       else if (typeof transform2 !== "function")
         throw new Error("invalid scale transform; not a function");
       scale.percent = !!percent;
-      scale.label = label === void 0 ? inferScaleLabel(channels, scale) : label;
+      scale.label = label === void 0 ? inferScaleLabel(channels2, scale) : label;
       scale.transform = transform2;
       if (key === "x" || key === "fx") {
         scale.insetLeft = +insetLeft;
@@ -55116,9 +55116,9 @@ function autoScaleRange(scales, dimensions) {
   if (y2)
     autoScaleRangeY(y2, subdimensions);
 }
-function inferScaleLabel(channels = [], scale) {
+function inferScaleLabel(channels2 = [], scale) {
   let label;
-  for (const { label: l } of channels) {
+  for (const { label: l } of channels2) {
     if (l === void 0)
       continue;
     if (label === void 0)
@@ -55220,10 +55220,10 @@ function piecewiseRange(scale) {
   const [start2, end] = scale.range;
   return Array.from({ length: length3 }, (_, i) => start2 + i / (length3 - 1) * (end - start2));
 }
-function createScale(key, channels = [], options = {}) {
-  const type2 = inferScaleType(key, channels, options);
+function createScale(key, channels2 = [], options = {}) {
+  const type2 = inferScaleType(key, channels2, options);
   if (options.type === void 0 && options.domain === void 0 && options.range === void 0 && options.interval == null && key !== "fx" && key !== "fy" && isOrdinalScale({ type: type2 })) {
-    const values2 = channels.map(({ value }) => value).filter((value) => value !== void 0);
+    const values2 = channels2.map(({ value }) => value).filter((value) => value !== void 0);
     if (values2.some(isTemporal))
       warn(
         `Warning: some data associated with the ${key} scale are dates. Dates are typically associated with a "utc" or "time" scale rather than a "${formatScaleType(
@@ -55265,64 +55265,64 @@ function createScale(key, channels = [], options = {}) {
     case "pow":
     case "log":
     case "symlog":
-      options = coerceType(channels, options, coerceNumbers);
+      options = coerceType(channels2, options, coerceNumbers);
       break;
     case "identity":
       switch (registry.get(key)) {
         case position:
-          options = coerceType(channels, options, coerceNumbers);
+          options = coerceType(channels2, options, coerceNumbers);
           break;
         case symbol:
-          options = coerceType(channels, options, coerceSymbols);
+          options = coerceType(channels2, options, coerceSymbols);
           break;
       }
       break;
     case "utc":
     case "time":
-      options = coerceType(channels, options, coerceDates);
+      options = coerceType(channels2, options, coerceDates);
       break;
   }
   switch (type2) {
     case "diverging":
-      return createScaleDiverging(key, channels, options);
+      return createScaleDiverging(key, channels2, options);
     case "diverging-sqrt":
-      return createScaleDivergingSqrt(key, channels, options);
+      return createScaleDivergingSqrt(key, channels2, options);
     case "diverging-pow":
-      return createScaleDivergingPow(key, channels, options);
+      return createScaleDivergingPow(key, channels2, options);
     case "diverging-log":
-      return createScaleDivergingLog(key, channels, options);
+      return createScaleDivergingLog(key, channels2, options);
     case "diverging-symlog":
-      return createScaleDivergingSymlog(key, channels, options);
+      return createScaleDivergingSymlog(key, channels2, options);
     case "categorical":
     case "ordinal":
     case ordinalImplicit:
-      return createScaleOrdinal(key, channels, options);
+      return createScaleOrdinal(key, channels2, options);
     case "cyclical":
     case "sequential":
     case "linear":
-      return createScaleLinear(key, channels, options);
+      return createScaleLinear(key, channels2, options);
     case "sqrt":
-      return createScaleSqrt(key, channels, options);
+      return createScaleSqrt(key, channels2, options);
     case "threshold":
-      return createScaleThreshold(key, channels, options);
+      return createScaleThreshold(key, channels2, options);
     case "quantile":
-      return createScaleQuantile(key, channels, options);
+      return createScaleQuantile(key, channels2, options);
     case "quantize":
-      return createScaleQuantize(key, channels, options);
+      return createScaleQuantize(key, channels2, options);
     case "pow":
-      return createScalePow(key, channels, options);
+      return createScalePow(key, channels2, options);
     case "log":
-      return createScaleLog(key, channels, options);
+      return createScaleLog(key, channels2, options);
     case "symlog":
-      return createScaleSymlog(key, channels, options);
+      return createScaleSymlog(key, channels2, options);
     case "utc":
-      return createScaleUtc(key, channels, options);
+      return createScaleUtc(key, channels2, options);
     case "time":
-      return createScaleTime(key, channels, options);
+      return createScaleTime(key, channels2, options);
     case "point":
-      return createScalePoint(key, channels, options);
+      return createScalePoint(key, channels2, options);
     case "band":
-      return createScaleBand(key, channels, options);
+      return createScaleBand(key, channels2, options);
     case "identity":
       return createScaleIdentity(key);
     case void 0:
@@ -55338,13 +55338,13 @@ function maybeScaleType(type2) {
   return typeof type2 === "string" ? `${type2}`.toLowerCase() : type2;
 }
 var typeProjection = { toString: () => "projection" };
-function inferScaleType(key, channels, { type: type2, domain, range: range3, scheme: scheme28, pivot, projection: projection3 }) {
+function inferScaleType(key, channels2, { type: type2, domain, range: range3, scheme: scheme28, pivot, projection: projection3 }) {
   type2 = maybeScaleType(type2);
   if (key === "fx" || key === "fy")
     return "band";
   if ((key === "x" || key === "y") && projection3 != null)
     type2 = typeProjection;
-  for (const channel of channels) {
+  for (const channel of channels2) {
     const t = maybeScaleType(channel.type);
     if (t === void 0)
       continue;
@@ -55357,7 +55357,7 @@ function inferScaleType(key, channels, { type: type2, domain, range: range3, sch
     return;
   if (type2 !== void 0)
     return type2;
-  if (domain === void 0 && !channels.some(({ value }) => value !== void 0))
+  if (domain === void 0 && !channels2.some(({ value }) => value !== void 0))
     return;
   const kind = registry.get(key);
   if (kind === radius)
@@ -55374,7 +55374,7 @@ function inferScaleType(key, channels, { type: type2, domain, range: range3, sch
     if (isTemporal(domain))
       return "utc";
   } else {
-    const values2 = channels.map(({ value }) => value).filter((value) => value !== void 0);
+    const values2 = channels2.map(({ value }) => value).filter((value) => value !== void 0);
     if (values2.some(isOrdinal))
       return asOrdinalType(kind);
     if (values2.some(isTemporal))
@@ -55419,8 +55419,8 @@ function isCollapsed(scale) {
   }
   return true;
 }
-function coerceType(channels, { domain, ...options }, coerceValues) {
-  for (const c4 of channels) {
+function coerceType(channels2, { domain, ...options }, coerceValues) {
+  for (const c4 of channels2) {
     if (c4.value !== void 0) {
       if (domain === void 0)
         domain = c4.value?.domain;
@@ -55620,7 +55620,7 @@ function facetAnchorRightEmpty(facets, { x: X3 }, { x: x3, y: y2, empty: empty3 
   if (i < X3.length - 1)
     return facetEmpty(facets, X3[i + 1], y2);
 }
-function facetAnchorEmpty(facets, channels, { empty: empty3 }) {
+function facetAnchorEmpty(facets, channels2, { empty: empty3 }) {
   return empty3;
 }
 function and(a2, b2) {
@@ -55932,7 +55932,7 @@ function styles(mark, {
   paintOrder,
   pointerEvents,
   shapeRendering,
-  channels
+  channels: channels2
 }, {
   ariaLabel: cariaLabel,
   fill: defaultFill = "currentColor",
@@ -55954,10 +55954,10 @@ function styles(mark, {
     strokeOpacity = null;
   }
   if (isNoneish(defaultFill)) {
-    if (!isNoneish(defaultStroke) && (!isNoneish(fill) || channels?.fill))
+    if (!isNoneish(defaultStroke) && (!isNoneish(fill) || channels2?.fill))
       defaultStroke = "none";
   } else {
-    if (isNoneish(defaultStroke) && (!isNoneish(stroke) || channels?.stroke))
+    if (isNoneish(defaultStroke) && (!isNoneish(stroke) || channels2?.stroke))
       defaultFill = "none";
   }
   const [vfill, cfill] = maybeColorChannel(fill, defaultFill);
@@ -56112,10 +56112,10 @@ function groupZ(I, Z3, z2) {
   }
   return G2.values();
 }
-function* groupIndex(I, position2, mark, channels) {
+function* groupIndex(I, position2, mark, channels2) {
   const { z: z2 } = mark;
-  const { z: Z3 } = channels;
-  const A5 = groupAesthetics(channels, mark);
+  const { z: Z3 } = channels2;
+  const A5 = groupAesthetics(channels2, mark);
   const C3 = [...position2, ...A5];
   for (const G2 of Z3 ? groupZ(I, Z3, z2) : [I]) {
     let Ag;
@@ -56268,7 +56268,7 @@ function applyFrameAnchor({ frameAnchor }, { width, height, marginTop, marginRig
 
 // node_modules/@observablehq/plot/src/mark.js
 var Mark = class {
-  constructor(data, channels = {}, options = {}, defaults8) {
+  constructor(data, channels2 = {}, options = {}, defaults8) {
     const {
       facet = "auto",
       facetAnchor,
@@ -56299,13 +56299,13 @@ var Mark = class {
       this.fy = data === singleton && typeof fy === "string" ? [fy] : fy;
     }
     this.facetAnchor = maybeFacetAnchor(facetAnchor);
-    channels = maybeNamed(channels);
+    channels2 = maybeNamed(channels2);
     if (extraChannels !== void 0)
-      channels = { ...maybeChannels(extraChannels), ...channels };
+      channels2 = { ...maybeChannels(extraChannels), ...channels2 };
     if (defaults8 !== void 0)
-      channels = { ...styles(this, options, defaults8), ...channels };
+      channels2 = { ...styles(this, options, defaults8), ...channels2 };
     this.channels = Object.fromEntries(
-      Object.entries(channels).map(([name7, channel]) => {
+      Object.entries(channels2).map(([name7, channel]) => {
         if (isOptions(channel.value)) {
           const { value, label = channel.label, scale = channel.scale } = channel.value;
           channel = { ...channel, label, scale, value };
@@ -56335,7 +56335,7 @@ var Mark = class {
       if (fx || fy)
         throw new Error(`super-faceting cannot use fx or fy`);
       for (const name7 in this.channels) {
-        const { scale } = channels[name7];
+        const { scale } = channels2[name7];
         if (scale !== "x" && scale !== "y")
           continue;
         throw new Error(`super-faceting cannot use x or y`);
@@ -56354,14 +56354,14 @@ var Mark = class {
       ({ facets, data } = this.transform(data, facets, plotOptions)), data = arrayify2(data);
     if (facets !== void 0)
       facets.original = originalFacets;
-    const channels = createChannels(this.channels, data);
+    const channels2 = createChannels(this.channels, data);
     if (this.sort != null)
-      channelDomain(data, facets, channels, facetChannels, this.sort);
-    return { data, facets, channels };
+      channelDomain(data, facets, channels2, facetChannels, this.sort);
+    return { data, facets, channels: channels2 };
   }
-  filter(index2, channels, values2) {
-    for (const name7 in channels) {
-      const { filter: filter2 = defined } = channels[name7];
+  filter(index2, channels2, values2) {
+    for (const name7 in channels2) {
+      const { filter: filter2 = defined } = channels2[name7];
       if (filter2 !== null) {
         const value = values2[name7];
         index2 = index2.filter((i) => filter2(value[i]));
@@ -56376,20 +56376,20 @@ var Mark = class {
   // projection, but whether the channels are associated with scales still
   // determines whether the projection should apply; think of the projection as
   // a combination xy-scale.
-  project(channels, values2, context) {
-    for (const cx in channels) {
-      if (channels[cx].scale === "x" && /^x|x$/.test(cx)) {
+  project(channels2, values2, context) {
+    for (const cx in channels2) {
+      if (channels2[cx].scale === "x" && /^x|x$/.test(cx)) {
         const cy = cx.replace(/^x|x$/, "y");
-        if (cy in channels && channels[cy].scale === "y") {
+        if (cy in channels2 && channels2[cy].scale === "y") {
           project(cx, cy, values2, context.projection);
         }
       }
     }
   }
-  scale(channels, scales, context) {
-    const values2 = valueObject(channels, scales);
+  scale(channels2, scales, context) {
+    const values2 = valueObject(channels2, scales);
     if (context.projection)
-      this.project(channels, values2, context);
+      this.project(channels2, values2, context);
     return values2;
   }
 };
@@ -56412,9 +56412,9 @@ function composeRender(r1, r2) {
     });
   };
 }
-function maybeChannels(channels) {
+function maybeChannels(channels2) {
   return Object.fromEntries(
-    Object.entries(maybeNamed(channels)).map(([name7, channel]) => {
+    Object.entries(maybeNamed(channels2)).map(([name7, channel]) => {
       channel = typeof channel === "string" ? { value: channel, label: name7 } : maybeValue(channel);
       if (channel.filter === void 0 && channel.scale == null)
         channel = { ...channel, filter: null };
@@ -56547,16 +56547,16 @@ function aspectRatioLength(k3, scale) {
 
 // node_modules/@observablehq/plot/src/interactions/pointer.js
 var states = /* @__PURE__ */ new WeakMap();
-function pointerK(kx2, ky2, { x: x3, y: y2, px, py, maxRadius = 40, channels, render, ...options } = {}) {
+function pointerK(kx2, ky2, { x: x3, y: y2, px, py, maxRadius = 40, channels: channels2, render, ...options } = {}) {
   maxRadius = +maxRadius;
   if (px != null)
-    x3 ??= null, channels = { ...channels, px: { value: px, scale: "x" } };
+    x3 ??= null, channels2 = { ...channels2, px: { value: px, scale: "x" } };
   if (py != null)
-    y2 ??= null, channels = { ...channels, py: { value: py, scale: "y" } };
+    y2 ??= null, channels2 = { ...channels2, py: { value: py, scale: "y" } };
   return {
     x: x3,
     y: y2,
-    channels,
+    channels: channels2,
     ...options,
     // Unlike other composed transforms, the render transform must be the
     // outermost render function because it will re-render dynamically in
@@ -56991,16 +56991,16 @@ var RuleX = class extends Mark {
     this.insetBottom = number5(insetBottom);
     markers(this, options);
   }
-  render(index2, scales, channels, dimensions, context) {
+  render(index2, scales, channels2, dimensions, context) {
     const { x: x3, y: y2 } = scales;
-    const { x: X3, y1: Y12, y2: Y23 } = channels;
+    const { x: X3, y1: Y12, y2: Y23 } = channels2;
     const { width, height, marginTop, marginRight, marginLeft, marginBottom } = dimensions;
     const { insetTop, insetBottom } = this;
     return create2("svg:g", context).call(applyIndirectStyles, this, dimensions, context).call(applyTransform, this, { x: X3 && x3 }, offset, 0).call(
       (g) => g.selectAll().data(index2).enter().append("line").call(applyDirectStyles, this).attr("x1", X3 ? (i) => X3[i] : (marginLeft + width - marginRight) / 2).attr("x2", X3 ? (i) => X3[i] : (marginLeft + width - marginRight) / 2).attr("y1", Y12 && !isCollapsed(y2) ? (i) => Y12[i] + insetTop : marginTop + insetTop).attr(
         "y2",
         Y23 && !isCollapsed(y2) ? y2.bandwidth ? (i) => Y23[i] + y2.bandwidth() - insetBottom : (i) => Y23[i] - insetBottom : height - marginBottom - insetBottom
-      ).call(applyChannelStyles, this, channels).call(applyMarkers, this, channels, context)
+      ).call(applyChannelStyles, this, channels2).call(applyMarkers, this, channels2, context)
     ).node();
   }
 };
@@ -57021,16 +57021,16 @@ var RuleY = class extends Mark {
     this.insetLeft = number5(insetLeft);
     markers(this, options);
   }
-  render(index2, scales, channels, dimensions, context) {
+  render(index2, scales, channels2, dimensions, context) {
     const { x: x3, y: y2 } = scales;
-    const { y: Y3, x1: X12, x2: X23 } = channels;
+    const { y: Y3, x1: X12, x2: X23 } = channels2;
     const { width, height, marginTop, marginRight, marginLeft, marginBottom } = dimensions;
     const { insetLeft, insetRight } = this;
     return create2("svg:g", context).call(applyIndirectStyles, this, dimensions, context).call(applyTransform, this, { y: Y3 && y2 }, 0, offset).call(
       (g) => g.selectAll().data(index2).enter().append("line").call(applyDirectStyles, this).attr("x1", X12 && !isCollapsed(x3) ? (i) => X12[i] + insetLeft : marginLeft + insetLeft).attr(
         "x2",
         X23 && !isCollapsed(x3) ? x3.bandwidth ? (i) => X23[i] + x3.bandwidth() - insetRight : (i) => X23[i] - insetRight : width - marginRight - insetRight
-      ).attr("y1", Y3 ? (i) => Y3[i] : (marginTop + height - marginBottom) / 2).attr("y2", Y3 ? (i) => Y3[i] : (marginTop + height - marginBottom) / 2).call(applyChannelStyles, this, channels).call(applyMarkers, this, channels, context)
+      ).attr("y1", Y3 ? (i) => Y3[i] : (marginTop + height - marginBottom) / 2).attr("y2", Y3 ? (i) => Y3[i] : (marginTop + height - marginBottom) / 2).call(applyChannelStyles, this, channels2).call(applyMarkers, this, channels2, context)
     ).node();
   }
 };
@@ -57144,16 +57144,16 @@ var Text = class extends Mark {
     this.splitLines = splitter(this);
     this.clipLine = clipper(this);
   }
-  render(index2, scales, channels, dimensions, context) {
+  render(index2, scales, channels2, dimensions, context) {
     const { x: x3, y: y2 } = scales;
-    const { x: X3, y: Y3, rotate: R, text: T, title: TL, fontSize: FS } = channels;
+    const { x: X3, y: Y3, rotate: R, text: T, title: TL, fontSize: FS } = channels2;
     const { rotate } = this;
     const [cx, cy] = applyFrameAnchor(this, dimensions);
     return create2("svg:g", context).call(applyIndirectStyles, this, dimensions, context).call(applyIndirectTextStyles, this, T, dimensions).call(applyTransform, this, { x: X3 && x3, y: Y3 && y2 }).call(
       (g) => g.selectAll().data(index2).enter().append("text").call(applyDirectStyles, this).call(applyMultilineText, this, T, TL).attr(
         "transform",
         template`translate(${X3 ? (i) => X3[i] : cx},${Y3 ? (i) => Y3[i] : cy})${R ? (i) => ` rotate(${R[i]})` : rotate ? ` rotate(${rotate})` : ``}`
-      ).call(applyAttr, "font-size", FS && ((i) => FS[i])).call(applyChannelStyles, this, channels)
+      ).call(applyAttr, "font-size", FS && ((i) => FS[i])).call(applyChannelStyles, this, channels2)
     ).node();
   }
 };
@@ -57568,9 +57568,9 @@ var Vector = class extends Mark {
     this.anchor = keyword(anchor, "anchor", ["start", "middle", "end"]);
     this.frameAnchor = maybeFrameAnchor(frameAnchor);
   }
-  render(index2, scales, channels, dimensions, context) {
+  render(index2, scales, channels2, dimensions, context) {
     const { x: x3, y: y2 } = scales;
-    const { x: X3, y: Y3, length: L2, rotate: A5 } = channels;
+    const { x: X3, y: Y3, length: L2, rotate: A5 } = channels2;
     const { length: length3, rotate, anchor, shape, r } = this;
     const [cx, cy] = applyFrameAnchor(this, dimensions);
     return create2("svg:g", context).call(applyIndirectStyles, this, dimensions, context).call(applyTransform, this, { x: X3 && x3, y: Y3 && y2 }).call(
@@ -57588,7 +57588,7 @@ var Vector = class extends Mark {
           shape.draw(p, length3, r);
           return p;
         })()
-      ).call(applyChannelStyles, this, channels)
+      ).call(applyChannelStyles, this, channels2)
     ).node();
   }
 };
@@ -57703,7 +57703,7 @@ function axisKy(k3, anchor, data, {
     }) : null,
     !isNoneish(fill) && label !== null ? text(
       [],
-      labelOptions({ fill, fillOpacity, ...options }, function(data2, facets, channels, scales, dimensions) {
+      labelOptions({ fill, fillOpacity, ...options }, function(data2, facets, channels2, scales, dimensions) {
         const scale = scales[k3];
         const { marginTop: marginTop2, marginRight: marginRight2, marginBottom: marginBottom2, marginLeft: marginLeft2 } = k3 === "y" && dimensions.inset || dimensions;
         const cla = labelAnchor ?? (scale.bandwidth ? "center" : "top");
@@ -57793,7 +57793,7 @@ function axisKx(k3, anchor, data, {
     }) : null,
     !isNoneish(fill) && label !== null ? text(
       [],
-      labelOptions({ fill, fillOpacity, ...options }, function(data2, facets, channels, scales, dimensions) {
+      labelOptions({ fill, fillOpacity, ...options }, function(data2, facets, channels2, scales, dimensions) {
         const scale = scales[k3];
         const { marginTop: marginTop2, marginRight: marginRight2, marginBottom: marginBottom2, marginLeft: marginLeft2 } = k3 === "x" && dimensions.inset || dimensions;
         const cla = labelAnchor ?? (scale.bandwidth ? "center" : "right");
@@ -57925,11 +57925,11 @@ function axisTextKy(k3, anchor, data, {
       ...options,
       dx: anchor === "left" ? +dx - tickSize - tickPadding + +insetLeft : +dx + +tickSize + +tickPadding - insetRight
     },
-    function(scale, data2, ticks2, tickFormat2, channels) {
+    function(scale, data2, ticks2, tickFormat2, channels2) {
       if (fontVariant === void 0)
         this.fontVariant = inferFontVariant3(scale);
       if (text2 === void 0)
-        channels.text = inferTextChannel(scale, data2, ticks2, tickFormat2, anchor);
+        channels2.text = inferTextChannel(scale, data2, ticks2, tickFormat2, anchor);
     }
   );
 }
@@ -57967,11 +57967,11 @@ function axisTextKx(k3, anchor, data, {
       ...options,
       dy: anchor === "bottom" ? +dy + +tickSize + +tickPadding - insetBottom : +dy - tickSize - tickPadding + +insetTop
     },
-    function(scale, data2, ticks2, tickFormat2, channels) {
+    function(scale, data2, ticks2, tickFormat2, channels2) {
       if (fontVariant === void 0)
         this.fontVariant = inferFontVariant3(scale);
       if (text2 === void 0)
-        channels.text = inferTextChannel(scale, data2, ticks2, tickFormat2, anchor);
+        channels2.text = inferTextChannel(scale, data2, ticks2, tickFormat2, anchor);
     }
   );
 }
@@ -58053,7 +58053,7 @@ function labelOptions({
   };
 }
 function axisMark(mark, k3, data, properties, options, initialize) {
-  let channels;
+  let channels2;
   function axisInitializer(data2, facets, _channels, scales, dimensions, context) {
     const initializeFacets = data2 == null && (k3 === "fx" || k3 === "fy");
     const { [k3]: scale } = scales;
@@ -58103,12 +58103,12 @@ function axisMark(mark, k3, data, properties, options, initialize) {
       if (k3 === "y" || k3 === "x") {
         facets = [range2(data2)];
       } else {
-        channels[k3] = { scale: k3, value: identity6 };
+        channels2[k3] = { scale: k3, value: identity6 };
       }
     }
-    initialize?.call(this, scale, data2, ticks2, tickFormat2, channels);
+    initialize?.call(this, scale, data2, ticks2, tickFormat2, channels2);
     const initializedChannels = Object.fromEntries(
-      Object.entries(channels).map(([name7, channel]) => {
+      Object.entries(channels2).map(([name7, channel]) => {
         return [name7, { ...channel, value: valueof(data2, channel.value) }];
       })
     );
@@ -58119,10 +58119,10 @@ function axisMark(mark, k3, data, properties, options, initialize) {
   const basicInitializer = initializer(options).initializer;
   const m = mark(data, initializer({ ...options, initializer: axisInitializer }, basicInitializer));
   if (data == null) {
-    channels = m.channels;
+    channels2 = m.channels;
     m.channels = {};
   } else {
-    channels = {};
+    channels2 = {};
   }
   if (properties !== void 0)
     Object.assign(m, properties);
@@ -58412,14 +58412,14 @@ var Frame = class extends Mark {
     this.rx = number5(rx);
     this.ry = number5(ry);
   }
-  render(index2, scales, channels, dimensions, context) {
+  render(index2, scales, channels2, dimensions, context) {
     const { marginTop, marginRight, marginBottom, marginLeft, width, height } = dimensions;
     const { anchor, insetTop, insetRight, insetBottom, insetLeft, rx, ry } = this;
     const x12 = marginLeft + insetLeft;
     const x22 = width - marginRight - insetRight;
     const y12 = marginTop + insetTop;
     const y2 = height - marginBottom - insetBottom;
-    return create2(anchor ? "svg:line" : "svg:rect", context).datum(0).call(applyIndirectStyles, this, dimensions, context).call(applyDirectStyles, this).call(applyChannelStyles, this, channels).call(applyTransform, this, {}).call(
+    return create2(anchor ? "svg:line" : "svg:rect", context).datum(0).call(applyIndirectStyles, this, dimensions, context).call(applyDirectStyles, this).call(applyChannelStyles, this, channels2).call(applyTransform, this, {}).call(
       anchor === "left" ? (line2) => line2.attr("x1", x12).attr("x2", x12).attr("y1", y12).attr("y2", y2) : anchor === "right" ? (line2) => line2.attr("x1", x22).attr("x2", x22).attr("y1", y12).attr("y2", y2) : anchor === "top" ? (line2) => line2.attr("x1", x12).attr("x2", x22).attr("y1", y12).attr("y2", y12) : anchor === "bottom" ? (line2) => line2.attr("x1", x12).attr("x2", x22).attr("y1", y2).attr("y2", y2) : (rect) => rect.attr("x", x12).attr("y", y12).attr("width", x22 - x12).attr("height", y2 - y12).attr("rx", rx).attr("ry", ry)
     ).node();
   }
@@ -58675,11 +58675,11 @@ function getPath(anchor, m, r, width, height) {
       return `M0,0l${m / 2},${-m / 2}v${m / 2 - h / 2}h${w}v${h}h${-w}v${m / 2 - h / 2}z`;
   }
 }
-function getSourceChannels(channels, scales) {
+function getSourceChannels(channels2, scales) {
   const sources = {};
   let format3 = this.format;
-  format3 = maybeExpandPairedFormat(format3, channels, "x");
-  format3 = maybeExpandPairedFormat(format3, channels, "y");
+  format3 = maybeExpandPairedFormat(format3, channels2, "x");
+  format3 = maybeExpandPairedFormat(format3, channels2, "y");
   this.format = format3;
   for (const key in format3) {
     const value = format3[key];
@@ -58688,15 +58688,15 @@ function getSourceChannels(channels, scales) {
     } else if (key === "fx" || key === "fy") {
       sources[key] = true;
     } else {
-      const source = getSource(channels, key);
+      const source = getSource(channels2, key);
       if (source)
         sources[key] = source;
     }
   }
-  for (const key in channels) {
+  for (const key in channels2) {
     if (key in sources || key in format3 || ignoreChannels.has(key))
       continue;
-    const source = getSource(channels, key);
+    const source = getSource(channels2, key);
     if (source)
       sources[key] = source;
   }
@@ -58718,12 +58718,12 @@ function getSourceChannels(channels, scales) {
   }
   return sources;
 }
-function maybeExpandPairedFormat(format3, channels, key) {
+function maybeExpandPairedFormat(format3, channels2, key) {
   if (!(key in format3))
     return format3;
   const key1 = `${key}1`;
   const key2 = `${key}2`;
-  if ((key1 in format3 || !(key1 in channels)) && (key2 in format3 || !(key2 in channels)))
+  if ((key1 in format3 || !(key1 in channels2)) && (key2 in format3 || !(key2 in channels2)))
     return format3;
   const entries = Object.entries(format3);
   const value = format3[key];
@@ -58733,29 +58733,29 @@ function maybeExpandPairedFormat(format3, channels, key) {
 function formatTitle(i, index2, { title }) {
   return this.format.title(title.value[i], i);
 }
-function* formatChannels(i, index2, channels, scales, values2) {
-  for (const key in channels) {
+function* formatChannels(i, index2, channels2, scales, values2) {
+  for (const key in channels2) {
     if (key === "fx" || key === "fy") {
       yield {
-        label: formatLabel(scales, channels, key),
+        label: formatLabel(scales, channels2, key),
         value: this.format[key](index2[key], i)
       };
       continue;
     }
-    if (key === "x1" && "x2" in channels)
+    if (key === "x1" && "x2" in channels2)
       continue;
-    if (key === "y1" && "y2" in channels)
+    if (key === "y1" && "y2" in channels2)
       continue;
-    const channel = channels[key];
-    if (key === "x2" && "x1" in channels) {
+    const channel = channels2[key];
+    if (key === "x2" && "x1" in channels2) {
       yield {
-        label: formatPairLabel(scales, channels, "x"),
-        value: formatPair(this.format.x2, channels.x1, channel, i)
+        label: formatPairLabel(scales, channels2, "x"),
+        value: formatPair(this.format.x2, channels2.x1, channel, i)
       };
-    } else if (key === "y2" && "y1" in channels) {
+    } else if (key === "y2" && "y1" in channels2) {
       yield {
-        label: formatPairLabel(scales, channels, "y"),
-        value: formatPair(this.format.y2, channels.y1, channel, i)
+        label: formatPairLabel(scales, channels2, "y"),
+        value: formatPair(this.format.y2, channels2.y1, channel, i)
       };
     } else {
       const value = channel.value[i];
@@ -58763,7 +58763,7 @@ function* formatChannels(i, index2, channels, scales, values2) {
       if (!defined(value) && scale == null)
         continue;
       yield {
-        label: formatLabel(scales, channels, key),
+        label: formatLabel(scales, channels2, key),
         value: this.format[key](value, i),
         color: scale === "color" ? values2[key][i] : null,
         opacity: scale === "opacity" ? values2[key][i] : null
@@ -58774,13 +58774,13 @@ function* formatChannels(i, index2, channels, scales, values2) {
 function formatPair(formatValue, c1, c22, i) {
   return c22.hint?.length ? `${formatValue(c22.value[i] - c1.value[i], i)}` : `${formatValue(c1.value[i], i)}\u2013${formatValue(c22.value[i], i)}`;
 }
-function formatPairLabel(scales, channels, key) {
-  const l1 = formatLabel(scales, channels, `${key}1`, key);
-  const l2 = formatLabel(scales, channels, `${key}2`, key);
+function formatPairLabel(scales, channels2, key) {
+  const l1 = formatLabel(scales, channels2, `${key}1`, key);
+  const l2 = formatLabel(scales, channels2, `${key}2`, key);
   return l1 === l2 ? l1 : `${l1}\u2013${l2}`;
 }
-function formatLabel(scales, channels, key, defaultLabel = key) {
-  const channel = channels[key];
+function formatLabel(scales, channels2, key, defaultLabel = key) {
+  const channel = channels2[key];
   const scale = scales[channel?.scale ?? key];
   return String(scale?.label ?? channel?.label ?? defaultLabel);
 }
@@ -58849,9 +58849,9 @@ function plot(options = {}) {
     if (stateByMark.has(mark))
       throw new Error("duplicate mark; each mark must be unique");
     const { facetsIndex, channels: facetChannels } = facetStateByMark.get(mark) ?? {};
-    const { data, facets: facets2, channels } = mark.initialize(facetsIndex, facetChannels, options);
-    applyScaleTransforms(channels, options);
-    stateByMark.set(mark, { data, facets: facets2, channels });
+    const { data, facets: facets2, channels: channels2 } = mark.initialize(facetsIndex, facetChannels, options);
+    applyScaleTransforms(channels2, options);
+    stateByMark.set(mark, { data, facets: facets2, channels: channels2 });
   }
   const scaleDescriptors = createScales(addScaleChannels(channelsByScale, stateByMark, options), options);
   const dimensions = createDimensions(scaleDescriptors, marks2, options);
@@ -58867,8 +58867,8 @@ function plot(options = {}) {
   context.ownerSVGElement = svg;
   context.className = className;
   context.projection = createProjection(options, subdimensions);
-  context.filterFacets = (data, channels) => {
-    return facetFilter(facets, { channels, groups: facetGroups(data, channels) });
+  context.filterFacets = (data, channels2) => {
+    return facetFilter(facets, { channels: channels2, groups: facetGroups(data, channels2) });
   };
   context.getMarkState = (mark) => {
     const state = stateByMark.get(mark);
@@ -58893,10 +58893,10 @@ function plot(options = {}) {
         state.facets = update.facets;
       }
       if (update.channels !== void 0) {
-        const { fx: fx2, fy: fy2, ...channels } = update.channels;
-        inferChannelScales(channels);
-        Object.assign(state.channels, channels);
-        for (const channel of Object.values(channels)) {
+        const { fx: fx2, fy: fy2, ...channels2 } = update.channels;
+        inferChannelScales(channels2);
+        Object.assign(state.channels, channels2);
+        for (const channel of Object.values(channels2)) {
           const { scale } = channel;
           if (scale != null && !isPosition(registry.get(scale))) {
             applyScaleTransform(channel, options);
@@ -58947,12 +58947,12 @@ function plot(options = {}) {
     )
   ).call(applyInlineStyles, style);
   for (const mark of marks2) {
-    const { channels, values: values2, facets: indexes2 } = stateByMark.get(mark);
+    const { channels: channels2, values: values2, facets: indexes2 } = stateByMark.get(mark);
     if (facets === void 0 || mark.facet === "super") {
       let index2 = null;
       if (indexes2) {
         index2 = indexes2[0];
-        index2 = mark.filter(index2, channels, values2);
+        index2 = mark.filter(index2, channels2, values2);
         if (index2.length === 0)
           continue;
       }
@@ -58969,7 +58969,7 @@ function plot(options = {}) {
         if (indexes2) {
           const faceted = facetStateByMark.has(mark);
           index2 = indexes2[faceted ? f.i : 0];
-          index2 = mark.filter(index2, channels, values2);
+          index2 = mark.filter(index2, channels2, values2);
           if (index2.length === 0)
             continue;
           if (!faceted && index2 === indexes2[0])
@@ -59042,10 +59042,10 @@ var Render = class extends Mark {
   render() {
   }
 };
-function applyScaleTransforms(channels, options) {
-  for (const name7 in channels)
-    applyScaleTransform(channels[name7], options);
-  return channels;
+function applyScaleTransforms(channels2, options) {
+  for (const name7 in channels2)
+    applyScaleTransform(channels2[name7], options);
+  return channels2;
 }
 function applyScaleTransform(channel, options) {
   const { scale, transform: t = true } = channel;
@@ -59062,15 +59062,15 @@ function applyScaleTransform(channel, options) {
   channel.value = map2(channel.value, transform2);
   channel.transform = false;
 }
-function inferChannelScales(channels) {
-  for (const name7 in channels) {
-    inferChannelScale(name7, channels[name7]);
+function inferChannelScales(channels2) {
+  for (const name7 in channels2) {
+    inferChannelScale(name7, channels2[name7]);
   }
 }
 function addScaleChannels(channelsByScale, stateByMark, options, filter2 = yes) {
-  for (const { channels } of stateByMark.values()) {
-    for (const name7 in channels) {
-      const channel = channels[name7];
+  for (const { channels: channels2 } of stateByMark.values()) {
+    for (const name7 in channels2) {
+      const channel = channels2[name7];
       const { scale } = channel;
       if (scale != null && filter2(scale)) {
         if (scale === "projection") {
@@ -59109,14 +59109,14 @@ function maybeTopFacet(facet, options) {
   const data = arrayify2(facet.data);
   if (data == null)
     throw new Error("missing facet data");
-  const channels = {};
+  const channels2 = {};
   if (x3 != null)
-    channels.fx = createChannel(data, { value: x3, scale: "fx" });
+    channels2.fx = createChannel(data, { value: x3, scale: "fx" });
   if (y2 != null)
-    channels.fy = createChannel(data, { value: y2, scale: "fy" });
-  applyScaleTransforms(channels, options);
-  const groups2 = facetGroups(data, channels);
-  return { channels, groups: groups2, data: facet.data };
+    channels2.fy = createChannel(data, { value: y2, scale: "fy" });
+  applyScaleTransforms(channels2, options);
+  const groups2 = facetGroups(data, channels2);
+  return { channels: channels2, groups: groups2, data: facet.data };
 }
 function maybeMarkFacet(mark, topFacetState, options) {
   if (mark.facet === null || mark.facet === "super")
@@ -59128,27 +59128,27 @@ function maybeMarkFacet(mark, topFacetState, options) {
       throw new Error(`missing facet data in ${mark.ariaLabel}`);
     if (data2 === null)
       return;
-    const channels2 = {};
+    const channels3 = {};
     if (fx != null)
-      channels2.fx = createChannel(data2, { value: fx, scale: "fx" });
+      channels3.fx = createChannel(data2, { value: fx, scale: "fx" });
     if (fy != null)
-      channels2.fy = createChannel(data2, { value: fy, scale: "fy" });
-    applyScaleTransforms(channels2, options);
-    return { channels: channels2, groups: facetGroups(data2, channels2) };
+      channels3.fy = createChannel(data2, { value: fy, scale: "fy" });
+    applyScaleTransforms(channels3, options);
+    return { channels: channels3, groups: facetGroups(data2, channels3) };
   }
   if (topFacetState === void 0)
     return;
-  const { channels, groups: groups2, data } = topFacetState;
+  const { channels: channels2, groups: groups2, data } = topFacetState;
   if (mark.facet !== "auto" || mark.data === data)
-    return { channels, groups: groups2 };
-  if (data.length > 0 && (groups2.size > 1 || groups2.size === 1 && channels.fx && channels.fy && [...groups2][0][1].size > 1) && arrayify2(mark.data)?.length === data.length) {
+    return { channels: channels2, groups: groups2 };
+  if (data.length > 0 && (groups2.size > 1 || groups2.size === 1 && channels2.fx && channels2.fy && [...groups2][0][1].size > 1) && arrayify2(mark.data)?.length === data.length) {
     warn(
       `Warning: the ${mark.ariaLabel} mark appears to use faceted data, but isn\u2019t faceted. The mark data has the same length as the facet data and the mark facet option is "auto", but the mark data and facet data are distinct. If this mark should be faceted, set the mark facet option to true; otherwise, suppress this warning by setting the mark facet option to false.`
     );
   }
 }
 function derive(mark, options = {}) {
-  return initializer({ ...options, x: null, y: null }, (data, facets, channels, scales, dimensions, context) => {
+  return initializer({ ...options, x: null, y: null }, (data, facets, channels2, scales, dimensions, context) => {
     return context.getMarkState(mark);
   });
 }
@@ -59441,13 +59441,13 @@ function binn(bx, by, gx, gy, {
   reverse: reverse2,
   ...outputs
   // output channel definitions
-} = {}, inputs = {}) {
+} = {}, inputs2 = {}) {
   bx = maybeBin(bx);
   by = maybeBin(by);
-  outputs = maybeBinOutputs(outputs, inputs);
+  outputs = maybeBinOutputs(outputs, inputs2);
   reduceData = maybeBinReduce(reduceData, identity6);
-  sort2 = sort2 == null ? void 0 : maybeBinOutput("sort", sort2, inputs);
-  filter2 = filter2 == null ? void 0 : maybeBinEvaluator("filter", filter2, inputs);
+  sort2 = sort2 == null ? void 0 : maybeBinOutput("sort", sort2, inputs2);
+  filter2 = filter2 == null ? void 0 : maybeBinEvaluator("filter", filter2, inputs2);
   if (gx != null && hasOutput(outputs, "x", "x1", "x2"))
     gx = null;
   if (gy != null && hasOutput(outputs, "y", "y1", "y2"))
@@ -59475,16 +59475,16 @@ function binn(bx, by, gx, gy, {
     thresholds,
     interval: interval2,
     ...options
-  } = inputs;
+  } = inputs2;
   const [GZ, setGZ] = maybeColumn(z2);
   const [vfill] = maybeColorChannel(fill);
   const [vstroke] = maybeColorChannel(stroke);
   const [GF, setGF] = maybeColumn(vfill);
   const [GS, setGS] = maybeColumn(vstroke);
   return {
-    ..."z" in inputs && { z: GZ || z2 },
-    ..."fill" in inputs && { fill: GF || fill },
-    ..."stroke" in inputs && { stroke: GS || stroke },
+    ..."z" in inputs2 && { z: GZ || z2 },
+    ..."fill" in inputs2 && { fill: GF || fill },
+    ..."stroke" in inputs2 && { stroke: GS || stroke },
     ...basic(options, (data, facets, plotOptions) => {
       const K3 = maybeApplyInterval(valueof(data, k3), plotOptions?.[gk]);
       const Z3 = valueof(data, z2);
@@ -59675,14 +59675,14 @@ function maybeThresholds(thresholds, interval2, defaultThresholds = thresholdAut
   }
   return thresholds;
 }
-function maybeBinOutputs(outputs, inputs) {
-  return maybeOutputs(outputs, inputs, maybeBinOutput);
+function maybeBinOutputs(outputs, inputs2) {
+  return maybeOutputs(outputs, inputs2, maybeBinOutput);
 }
-function maybeBinOutput(name7, reduce, inputs) {
-  return maybeOutput(name7, reduce, inputs, maybeBinEvaluator);
+function maybeBinOutput(name7, reduce, inputs2) {
+  return maybeOutput(name7, reduce, inputs2, maybeBinEvaluator);
 }
-function maybeBinEvaluator(name7, reduce, inputs) {
-  return maybeEvaluator(name7, reduce, inputs, maybeBinReduce);
+function maybeBinEvaluator(name7, reduce, inputs2) {
+  return maybeEvaluator(name7, reduce, inputs2, maybeBinReduce);
 }
 function maybeBinReduce(reduce, value) {
   return maybeReduce(reduce, value, maybeBinReduceFallback);
@@ -60153,10 +60153,10 @@ var Area = class extends Mark {
   filter(index2) {
     return index2;
   }
-  render(index2, scales, channels, dimensions, context) {
-    const { x1: X12, y1: Y12, x2: X23 = X12, y2: Y23 = Y12 } = channels;
+  render(index2, scales, channels2, dimensions, context) {
+    const { x1: X12, y1: Y12, x2: X23 = X12, y2: Y23 = Y12 } = channels2;
     return create2("svg:g", context).call(applyIndirectStyles, this, dimensions, context).call(applyTransform, this, scales, 0, 0).call(
-      (g) => g.selectAll().data(groupIndex(index2, [X12, Y12, X23, Y23], this, channels)).enter().append("path").call(applyDirectStyles, this).call(applyGroupedChannelStyles, this, channels).attr(
+      (g) => g.selectAll().data(groupIndex(index2, [X12, Y12, X23, Y23], this, channels2)).enter().append("path").call(applyDirectStyles, this).call(applyGroupedChannelStyles, this, channels2).attr(
         "d",
         area_default2().curve(this.curve).defined((i) => i >= 0).x0((i) => X12[i]).y0((i) => Y12[i]).x1((i) => X23[i]).y1((i) => Y23[i])
       )
@@ -60198,16 +60198,16 @@ var Line = class extends Mark {
   filter(index2) {
     return index2;
   }
-  project(channels, values2, context) {
+  project(channels2, values2, context) {
     if (this.curve !== curveAuto) {
-      super.project(channels, values2, context);
+      super.project(channels2, values2, context);
     }
   }
-  render(index2, scales, channels, dimensions, context) {
-    const { x: X3, y: Y3 } = channels;
+  render(index2, scales, channels2, dimensions, context) {
+    const { x: X3, y: Y3 } = channels2;
     const { curve } = this;
     return create2("svg:g", context).call(applyIndirectStyles, this, dimensions, context).call(applyTransform, this, scales).call(
-      (g) => g.selectAll().data(groupIndex(index2, [X3, Y3], this, channels)).enter().append("path").call(applyDirectStyles, this).call(applyGroupedChannelStyles, this, channels).call(applyGroupedMarkers, this, channels, context).attr(
+      (g) => g.selectAll().data(groupIndex(index2, [X3, Y3], this, channels2)).enter().append("path").call(applyDirectStyles, this).call(applyGroupedChannelStyles, this, channels2).call(applyGroupedMarkers, this, channels2, context).attr(
         "d",
         curve === curveAuto && context.projection ? sphereLine(context.projection, X3, Y3) : line_default2().curve(curve).defined((i) => i >= 0).x((i) => X3[i]).y((i) => Y3[i])
       )
@@ -60279,7 +60279,7 @@ var ModelView = class extends View {
         el,
         "click",
         () => {
-          this.dispatchEvent({ ChooseChannel: { modelGuid: this.modelGuid } });
+          this.dispatchEvent({ ChooseChannel: { guid: this.modelGuid } });
         },
         ".add"
       ),
@@ -60302,7 +60302,7 @@ var ModelView = class extends View {
         "click",
         (_, d) => {
           const guid = invariant(d.dataset.guid, "guid");
-          this.dispatchEvent({ EditChannel: { guid } });
+          this.dispatchEvent({ ShowChannel: { guid } });
         },
         ".edit"
       ),
@@ -60502,10 +60502,25 @@ var QuickSearch = class extends View {
         "click",
         (_, e) => {
           const eventName = `Choose${this.state.quickSearch}`;
-          this.dispatchEvent({ [eventName]: e.dataset.guid });
+          this.dispatchEvent({ [eventName]: { guid: e.dataset.guid } });
         },
         ".result"
-      )
+      ),
+      this.eventListener("create-result", "click", () => {
+        const eventName = `Create${this.state.quickSearch}`;
+        console.log({
+          [eventName]: {
+            name: this.input.value,
+            guid: this.state.quickSearchGuid
+          }
+        });
+        this.dispatchEvent({
+          [eventName]: {
+            name: this.input.value,
+            guid: this.state.quickSearchGuid
+          }
+        });
+      })
     ];
   }
   showing(state) {
@@ -60525,13 +60540,77 @@ var QuickSearch = class extends View {
   }
 };
 
-// src/index.ts
-var initUI = cre8([
-  Nav,
-  ModelView,
-  ModelListView,
-  QuickSearch
-]);
+// src/views/ChannelView.ts
+var ChannelView = class extends View {
+  static get id() {
+    return "channel";
+  }
+  get id() {
+    return ChannelView.id;
+  }
+  get channel() {
+    return invariant(this.state.showingChannel, "channel");
+  }
+  mount() {
+    const el = invariant(this.rootElement, "channel root");
+    const guid = this.channel.guid;
+    return [
+      this.eventListener(
+        el,
+        "click",
+        () => {
+          this.dispatchEvent({ ChooseInput: { guid } });
+        },
+        ".add"
+      ),
+      this.eventListener(
+        el,
+        "click",
+        (_, d) => {
+          const inputGuid = invariant(d.dataset.guid, "guid");
+          this.dispatchEvent({
+            RemoveInput: {
+              inputGuid,
+              channelGuid: guid
+            }
+          });
+        },
+        ".delete"
+      ),
+      this.eventListener(
+        el,
+        "click",
+        (_, d) => {
+          const guid2 = invariant(d.dataset.guid, "guid");
+          this.dispatchEvent({ ShowInput: { guid: guid2 } });
+        },
+        ".edit"
+      )
+    ];
+  }
+  showing(state) {
+    return state.showingScreen === "Channel";
+  }
+  updated() {
+    const inputCollection = this.template("collection");
+    this.setAttrs("name", { value: this.channel.name });
+    this.setContent(
+      inputCollection,
+      this.channel.inputs.map((i) => {
+        const cEl = this.template("collection-row");
+        this.setContent(cEl, i.name, ".name");
+        this.setData(cEl, { guid: i.guid }, ".delete");
+        this.setData(cEl, { guid: i.guid }, ".edit");
+        this.findElement(cEl, ".toggle").classList.add("hidden");
+        return cEl;
+      }),
+      ".collection"
+    );
+    this.setContent("inputs", inputCollection);
+  }
+};
+
+// src/data.ts
 var app = firebase.initializeApp({
   apiKey: "AIzaSyCjURzjH7ZuL7H5qmnqXVypuw9PxN-0CnU",
   authDomain: "nice-dream-internal.firebaseapp.com",
@@ -60548,40 +60627,36 @@ var getMap = async (db, name7) => {
   });
   return oMap;
 };
-var getRemoteState = async (db) => {
-  const [models, inputs, channels, curves2] = await Promise.all([
+var models = /* @__PURE__ */ new Map();
+var inputs = /* @__PURE__ */ new Map();
+var channels = /* @__PURE__ */ new Map();
+var curves2 = /* @__PURE__ */ new Map();
+var derefInput = (id2) => {
+  const i = invariant(inputs.get(id2), `Missing input ref: ${id2}`);
+  return {
+    ...i,
+    curve: invariant(
+      curves2.get(i.curve.id),
+      `Missing curve ref: ${i.curve.id}`
+    )
+  };
+};
+var derefChannel = (id2) => {
+  const c4 = invariant(channels.get(id2), `Missing channel ref: ${id2}`);
+  return {
+    ...c4,
+    inputs: c4.inputs.map((i) => derefInput(i.id))
+  };
+};
+var reloadRemoteData = async (db) => {
+  [models, inputs, channels, curves2] = await Promise.all([
     getMap(db, "models"),
     getMap(db, "inputs"),
     getMap(db, "channels"),
     getMap(db, "curves")
   ]);
-  const derefInput = (id2) => {
-    const i = invariant(inputs.get(id2), `Missing input ref: ${id2}`);
-    return {
-      ...i,
-      curve: invariant(
-        curves2.get(i.curve.id),
-        `Missing curve ref: ${i.curve.id}`
-      )
-    };
-  };
-  const derefChannel = (id2) => {
-    const c4 = invariant(channels.get(id2), `Missing channel ref: ${id2}`);
-    return {
-      ...c4,
-      inputs: c4.inputs.map((i) => derefInput(i.id))
-    };
-  };
-  const state = {
-    models: [],
-    channels: [],
-    inputs: [],
-    quickSearch: "Channel",
-    showingScreen: "Models",
-    expandedChannels: /* @__PURE__ */ new Set(),
-    chartInputs: { days: 365, offsetDay: 0 },
-    chart: { data: [], profitLoss: [] }
-  };
+};
+var addRemoteState = async (state) => {
   models.forEach((model) => {
     state.models.push({
       ...model,
@@ -60596,6 +60671,15 @@ var getRemoteState = async (db) => {
   });
   return state;
 };
+
+// src/index.ts
+var initUI = cre8([
+  Nav,
+  ModelView,
+  ModelListView,
+  QuickSearch,
+  ChannelView
+]);
 var defaultAccumulator = (currentCount) => ({
   currentCount,
   isSaturated: false
@@ -60655,11 +60739,21 @@ window.addEventListener("load", async () => {
     });
     return;
   }
+  const state = {
+    models: [],
+    channels: [],
+    inputs: [],
+    showingScreen: "Models",
+    expandedChannels: /* @__PURE__ */ new Set(),
+    chartInputs: { days: 365, offsetDay: 0 },
+    chart: { data: [], profitLoss: [] }
+  };
   const db = firebase.firestore(app);
-  const state = await getRemoteState(db);
+  await reloadRemoteData(db);
+  await addRemoteState(state);
   updateChart(state);
-  const upd8 = initUI(state, (event) => {
-    matchEnum(event, (ev, value) => {
+  const upd8 = initUI(state, async (event) => {
+    await matchEnum(event, async (ev, value) => {
       switch (ev) {
         case "GoBack": {
           switch (state.showingScreen) {
@@ -60674,6 +60768,9 @@ window.addEventListener("load", async () => {
               break;
             case "Input":
               state.showingScreen = "Inputs";
+              break;
+            case "Channel":
+              state.showingScreen = "Model";
               break;
           }
           break;
@@ -60705,14 +60802,30 @@ window.addEventListener("load", async () => {
         }
         case "ChooseChannel": {
           state.quickSearch = "Channel";
+          state.quickSearchGuid = value.guid;
           break;
         }
         case "ChooseInput": {
           state.quickSearch = "Input";
+          state.quickSearchGuid = value.guid;
           break;
         }
         case "CancelSearch": {
           state.quickSearch = void 0;
+          state.quickSearchGuid = void 0;
+          break;
+        }
+        case "CreateChannel": {
+          const newChannel = await db.collection("channels").add({
+            name: value.name
+          });
+          await db.collection("models").doc(value.guid).update({
+            channel: firebase.firestore.FieldValue.arrayUnion(
+              `/channels/${newChannel.id}`
+            )
+          });
+          await reloadRemoteData(db);
+          addRemoteState(state);
           break;
         }
       }
