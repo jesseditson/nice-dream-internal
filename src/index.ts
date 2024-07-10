@@ -1,7 +1,7 @@
 import feather from "feather-icons";
 import { cre8 } from "upd8";
 import { NDEvent } from "./events";
-import { State } from "./types";
+import { State } from "./state";
 import { ModelView } from "./views/ModelView";
 import { ModelListView } from "./views/ModelListView";
 import { matchEnum } from "./utils";

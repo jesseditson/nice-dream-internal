@@ -32,9 +32,9 @@ export const matches = <T extends EnumType>(
   }
 };
 
-export const invariant = <T>(v: T, name?: string): NonNullable<T> => {
+export const invariant = <T>(v: T, message?: string): NonNullable<T> => {
   if (!v) {
-    throw new Error(name ? `${name} must be defined` : "invariant violated");
+    throw new Error(message || "invariant violated");
   }
   return v;
 };

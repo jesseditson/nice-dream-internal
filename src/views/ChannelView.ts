@@ -1,5 +1,5 @@
 import { View } from "./View";
-import { State } from "../types";
+import { State } from "../state";
 import { invariant } from "../utils";
 
 export class ChannelView extends View {

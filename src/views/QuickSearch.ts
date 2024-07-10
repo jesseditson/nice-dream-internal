@@ -1,4 +1,4 @@
-import { State } from "../types";
+import { State } from "../state";
 import { invariant } from "../utils";
 import { View } from "./View";
 

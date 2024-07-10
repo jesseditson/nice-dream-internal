@@ -1,54 +1,99 @@
 import { invariant } from "./utils";
-import { Channel, Curve, Input, Model, State } from "./types";
+import { Curve, Input, Model, State } from "./state";
 import { googleAPI } from "./google";
 
 type SheetName = "Inputs" | "Models" | "Curves";
 
+type ValuesResponse = {
+  majorDimensions: "ROWS" | "COLS";
+  range: string;
+  values: (string | number)[][];
+};
+
+const unpackValues = (
+  prefix: string,
+  r: ValuesResponse,
+  cb: (
+    value: Record<string, string | number | (string | number)[]>,
+    index: number
+  ) => void
+) => {
+  // first row is a header
+  const fieldNames = r.values[0];
+  // loop over rows
+  for (let i = 0; i < r.values.length - 1; i++) {
+    // rows are 1-indexed since that's how they appear in the sheet
+    let rowIdx = i + 1;
+    const guid = `${prefix}-${rowIdx}`;
+    // For each row, return an object mapping headers to values.
+    const row = r.values[rowIdx];
+    let restValues: (string | number)[] | undefined;
+    if (row.length > fieldNames.length) {
+      restValues = row.slice(fieldNames.length - 1);
+    }
+    const obj = fieldNames.reduce((o, fn, idx) => {
+      const isLast = idx === fieldNames.length - 1;
+      o[fn] = isLast && restValues ? restValues : row[idx];
+      return o;
+    }, {} as Record<string, string | number | (string | number)[]>);
+    cb({ ...obj, guid }, rowIdx);
+  }
+};
+
 const getMap = async <T>(
   google: ReturnType<typeof googleAPI>,
   name: SheetName
-): Promise<Map<string, T>> => {
+): Promise<Map<number, T>> => {
   const oMap = new Map();
   switch (name) {
-    case "Inputs":
-      const inputs = await google(
+    case "Inputs": {
+      const inputs = await google<ValuesResponse>(
         "GET",
-        "values/Inputs!A:G?majorDimension=ROWS"
+        "values/Inputs?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE"
       );
-      console.log(inputs);
+      unpackValues("inputs", inputs, (val, i) => {
+        oMap.set(i, val);
+      });
+      break;
+    }
+    case "Curves": {
+      const curves = await google<ValuesResponse>(
+        "GET",
+        "values/Curves?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE"
+      );
+      unpackValues("curves", curves, (val, i) => {
+        oMap.set(i, val);
+      });
+      break;
+    }
+    case "Models": {
+      const models = await google<ValuesResponse>(
+        "GET",
+        "values/Models?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE"
+      );
+      unpackValues("models", models, (val, i) => {
+        oMap.set(i, val);
+      });
+      break;
+    }
   }
-  // objects.forEach((obj) => {
-  //   oMap.set(obj.id, { ...obj.data(), guid: obj.id });
-  // });
   return oMap;
 };
 
-export let models: Map<string, Model<number>> = new Map();
-export let inputs: Map<string, Input<number>> = new Map();
-export let channels: Map<string, Channel<number>> = new Map();
-export let curves: Map<string, Curve> = new Map();
+export let models: Map<number, Model<number>> = new Map();
+export let inputs: Map<number, Input<number>> = new Map();
+export let curves: Map<number, Curve> = new Map();
 
-export const derefInput = (id: string): State["inputs"][0] => {
+export const derefInput = (id: number): State["inputs"][0] => {
   const i = invariant(inputs.get(id), `Missing input ref: ${id}`);
   return {
     ...i,
-    curve: invariant(
-      curves.get(i.curve.id),
-      `Missing curve ref: ${i.curve.id}`
-    ),
-  };
-};
-
-export const derefChannel = (id: string): State["channels"][0] => {
-  const c = invariant(channels.get(id), `Missing channel ref: ${id}`);
-  return {
-    ...c,
-    inputs: c.inputs.map((i) => derefInput(i.id)),
+    curve: invariant(curves.get(i.curve), `Missing curve ref: ${i.curve}`),
   };
 };
 
 export const reloadRemoteData = async (
-  token: typeof google.accounts.oauth2.TokenResponse,
+  token: google.accounts.oauth2.TokenResponse,
   sheetId: string
 ) => {
   const google = googleAPI(
@@ -63,17 +108,15 @@ export const reloadRemoteData = async (
 };
 
 export const addRemoteState = async (state: State): Promise<State> => {
+  console.log(models, inputs, curves);
   models.forEach((model) => {
     state.models.push({
       ...model,
-      channels: model.channels.map((channel) => derefChannel(channel.id)),
+      inputs: model.inputs.map((num) => derefInput(num)),
     });
   });
-  channels.forEach((_, id) => {
-    state.channels.push(derefChannel(id));
-  });
-  inputs.forEach((_, id) => {
-    state.inputs.push(derefInput(id));
+  inputs.forEach((_, num) => {
+    state.inputs.push(derefInput(num));
   });
   return state;
 };

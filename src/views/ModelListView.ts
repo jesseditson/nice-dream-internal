@@ -1,4 +1,4 @@
-import { State } from "../types";
+import { State } from "../state";
 import { View } from "./View";
 
 export class ModelListView extends View {

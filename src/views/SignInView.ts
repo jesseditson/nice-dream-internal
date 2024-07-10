@@ -1,5 +1,5 @@
 import { jwtDecode } from "jwt-decode";
-import { State } from "../types";
+import { State } from "../state";
 import { View } from "./View";
 
 // https://developers.google.com/identity/gsi/web/reference/js-reference#CredentialResponse
@@ -57,7 +57,16 @@ export class SignInView extends View {
 
   maybeSignIn() {
     const stored = localStorage.getItem("googleAuthCreds");
-    if (stored && !googleAuthCreds) {
+    const storedToken = localStorage.getItem("googleToken");
+    if (storedToken) {
+      // TODO: validate token
+      console.log(storedToken);
+      this.dispatchEvent({
+        SignedIn: { token: JSON.parse(storedToken) },
+      });
+      return;
+    }
+    if (stored && !googleAuthCreds.credential) {
       googleAuthCreds = JSON.parse(stored);
     }
     if (googleAuthCreds.credential) {
@@ -69,6 +78,7 @@ export class SignInView extends View {
         // TODO: move to "https://www.googleapis.com/auth/drive.file" and implement filepicker
         scope: "https://www.googleapis.com/auth/spreadsheets",
         callback: (response) => {
+          localStorage.setItem("googleToken", JSON.stringify(response));
           console.log(response);
           this.dispatchEvent({
             SignedIn: { token: response },
