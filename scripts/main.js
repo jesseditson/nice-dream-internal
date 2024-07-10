@@ -60447,7 +60447,91 @@ var Nav = class extends View {
   }
 };
 
+// src/views/QuickSearch.ts
+var QuickSearch = class extends View {
+  static get id() {
+    return "quick-search";
+  }
+  get id() {
+    return QuickSearch.id;
+  }
+  get input() {
+    return this.el("typeahead");
+  }
+  get allResults() {
+    switch (this.state.quickSearch) {
+      case "Channel":
+        return this.state.channels;
+      case "Input":
+        return this.state.inputs;
+    }
+    return [];
+  }
+  get showingResults() {
+    if (!this.input.value) {
+      return this.allResults;
+    }
+    return this.allResults.filter((i) => {
+      i.name.includes(this.input.value);
+    });
+  }
+  mount() {
+    const root2 = invariant(this.rootElement, "quicksearch root");
+    return [
+      this.eventListener(root2, "click", (e) => {
+        if (e.target?.id === this.id) {
+          this.dispatchEvent("CancelSearch");
+        }
+      }),
+      this.eventListener("typeahead", "keydown", (e) => {
+        if (e.key === "Escape") {
+          this.dispatchEvent("CancelSearch");
+        }
+      }),
+      this.eventListener("typeahead", "input", () => {
+        if (this.input.value) {
+          this.setContent(
+            "create-result",
+            `Create new ${this.state.quickSearch} named ${this.input.value}`
+          );
+        }
+        this.el("create-result").classList.toggle("hidden", !this.input.value);
+      }),
+      this.eventListener(
+        root2,
+        "click",
+        (_, e) => {
+          const eventName = `Choose${this.state.quickSearch}`;
+          this.dispatchEvent({ [eventName]: e.dataset.guid });
+        },
+        ".result"
+      )
+    ];
+  }
+  showing(state) {
+    return !!state.quickSearch;
+  }
+  updated() {
+    this.setContent("title", `Find a ${this.state.quickSearch}`);
+    this.setContent(
+      "results",
+      this.showingResults.map((r) => {
+        const rEl = this.template("result");
+        this.setContent(rEl, r.name, ".name");
+        this.setData(rEl, {});
+        return rEl;
+      })
+    );
+  }
+};
+
 // src/index.ts
+var initUI = cre8([
+  Nav,
+  ModelView,
+  ModelListView,
+  QuickSearch
+]);
 var app = firebase.initializeApp({
   apiKey: "AIzaSyCjURzjH7ZuL7H5qmnqXVypuw9PxN-0CnU",
   authDomain: "nice-dream-internal.firebaseapp.com",
@@ -60492,6 +60576,7 @@ var getRemoteState = async (db) => {
     models: [],
     channels: [],
     inputs: [],
+    quickSearch: "Channel",
     showingScreen: "Models",
     expandedChannels: /* @__PURE__ */ new Set(),
     chartInputs: { days: 365, offsetDay: 0 },
@@ -60560,7 +60645,6 @@ var updateChart = (state) => {
   }
   return state;
 };
-var initUI = cre8([Nav, ModelView, ModelListView]);
 window.addEventListener("load", async () => {
   var ui = new auth.AuthUI(firebase.auth());
   const auth2 = firebase.auth();
@@ -60617,6 +60701,18 @@ window.addEventListener("load", async () => {
             state.showingChannel = channel;
             state.showingScreen = "Channel";
           }
+          break;
+        }
+        case "ChooseChannel": {
+          state.quickSearch = "Channel";
+          break;
+        }
+        case "ChooseInput": {
+          state.quickSearch = "Input";
+          break;
+        }
+        case "CancelSearch": {
+          state.quickSearch = void 0;
           break;
         }
       }
