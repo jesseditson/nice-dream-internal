@@ -32,13 +32,15 @@ const updateChart = (state: State): State => {
     const data: State["chart"]["data"] = [];
     const profitLoss: State["chart"]["profitLoss"] = [];
     let acc: Record<string, Accumulator> = {};
+    let profit = 0;
+    let loss = 0;
     for (let day = offsetDay; day < days; day++) {
       let dayRevenue = 0;
       model.channels.forEach((c) => {
         let channelCount = 0;
         let channelRevenue = 0;
         c.inputs.forEach((i) => {
-          const dailyGrowth = i.growthPercent / i.growthFreq;
+          const dailyGrowth = i.growthFreq ? i.growthPercent / i.growthFreq : 0;
           if (!acc[i.guid]) {
             acc[i.guid] = defaultAccumulator(i.seed);
           }
@@ -51,6 +53,11 @@ const updateChart = (state: State): State => {
             acc[i.guid].isSaturated = true;
           }
           const revenue = (count / i.avgFreq) * i.avgSize;
+          if (revenue >= 0) {
+            profit += revenue;
+          } else {
+            loss -= revenue;
+          }
           channelRevenue += revenue;
           channelCount += count;
           data.push({
@@ -74,6 +81,8 @@ const updateChart = (state: State): State => {
     state.chart = {
       data,
       profitLoss,
+      profit,
+      loss,
     };
   }
   return state;
@@ -97,8 +106,8 @@ window.addEventListener("load", async () => {
     inputs: [],
     showingScreen: "Models",
     expandedChannels: new Set(),
-    chartInputs: { days: 365, offsetDay: 0 },
-    chart: { data: [], profitLoss: [] },
+    chartInputs: { days: 90, offsetDay: 0 },
+    chart: { data: [], profitLoss: [], profit: 0, loss: 0 },
   };
   const db = firebase.firestore(app);
   await reloadRemoteData(db);
@@ -183,6 +192,11 @@ window.addEventListener("load", async () => {
           await reloadRemoteData(db);
           addRemoteState(state);
           break;
+        }
+        case "UpdateChart": {
+          state.chartInputs.days = value.days;
+          state.chartInputs.offsetDay = value.offset;
+          updateChart(state);
         }
       }
     });

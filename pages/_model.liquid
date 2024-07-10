@@ -1,4 +1,29 @@
 <div id="model" class="w-full hidden">
+  <div class="flex justify-between">
+    <div class="flex gap-2">
+      <label>offset <input
+          id="offset"
+          type="range"
+          min="0"
+          max="1095"
+          value="0" /></label>
+      <label>days <input
+          id="days"
+          type="range"
+          min="0"
+          max="1095"
+          value="0" /></label>
+    </div>
+    <div class="grid grid-cols-2">
+      profit:
+      <span id="profit"></span>
+      loss:
+      <span id="loss"></span>
+      net:
+      <span id="net"></span>
+    </div>
+  </div>
+
   <div id="chart" class="w-full"></div>
   <div id="channels">
     {% include 'collection' title: "Channels" %}

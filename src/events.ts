@@ -53,4 +53,7 @@ export type NDEvent =
     }
   | {
       ToggleChannelExpanded: { guid: string };
+    }
+  | {
+      UpdateChart: { days: number; offset: number };
     };

@@ -59,17 +59,30 @@ export class ModelView extends View {
         },
         ".toggle"
       ),
+      this.eventListener("offset", "change", this.updateChartInputs.bind(this)),
+      this.eventListener("days", "change", this.updateChartInputs.bind(this)),
     ];
+  }
+
+  updateChartInputs() {
+    this.dispatchEvent({
+      UpdateChart: {
+        days: Number.parseInt(this.el<HTMLInputElement>("days").value),
+        offset: Number.parseInt(this.el<HTMLInputElement>("offset").value),
+      },
+    });
   }
 
   // https://leebyron.com/streamgraph/
   getChart() {
     const { data, profitLoss } = this.state.chart;
+    console.log(data, profitLoss);
     return Plot.plot({
       y: {
         grid: true,
         label: "↑ Revenue",
         // transform: (d) => d / 1000,
+        // domain: [-1000, 3000],
       },
       x: {
         label: "Day →",
@@ -81,10 +94,12 @@ export class ModelView extends View {
           x: "day",
           y: "revenue",
           z: "input",
-          fill: "channel",
+          fill: this.state.expandedChannels.size ? "input" : "channel",
+          offset: "wiggle",
         }),
         Plot.lineY(profitLoss, {
           y: "total",
+          tip: true,
         }),
       ],
     });
@@ -132,5 +147,20 @@ export class ModelView extends View {
       ".collection"
     );
     this.setContent("channels", channelCollection);
+    this.setAttrs("offset", { max: `${this.state.chartInputs.days}` });
+    this.setAttrs("days", {
+      min: `${this.state.chartInputs.offsetDay}`,
+      value: `${this.state.chartInputs.days}`,
+    });
+    const mf = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    });
+    this.setContent("profit", mf.format(this.state.chart.profit));
+    this.setContent("loss", `(${mf.format(this.state.chart.loss)})`);
+    this.setContent(
+      "net",
+      mf.format(this.state.chart.profit - this.state.chart.loss)
+    );
   }
 }

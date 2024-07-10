@@ -61,6 +61,8 @@ export type State = {
       count: number;
       revenue: number;
     }[];
+    profit: number;
+    loss: number;
     profitLoss: { total: number }[];
   };
 };
