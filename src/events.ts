@@ -1,6 +1,7 @@
 import { Input } from "./types";
 
 export type NDEvent =
+  | { SignedIn: { credential: string; select_by?: string } }
   | "GoBack"
   | "NewModel"
   | "NewChannel"

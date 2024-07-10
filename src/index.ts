@@ -1,6 +1,3 @@
-import firebase from "firebase/compat/app";
-import "firebase/compat/firestore";
-import * as firebaseui from "firebaseui";
 import feather from "feather-icons";
 import { cre8 } from "upd8";
 import { NDEvent } from "./events";
@@ -11,10 +8,12 @@ import { matchEnum } from "./utils";
 import { Nav } from "./views/Nav";
 import { QuickSearch } from "./views/QuickSearch";
 import { ChannelView } from "./views/ChannelView";
-import { app, addRemoteState, reloadRemoteData } from "./data";
+import { addRemoteState, reloadRemoteData } from "./data";
+import { SignInView } from "./views/SignInView";
 
 const initUI = cre8<State, NDEvent>([
   Nav,
+  SignInView,
   ModelView,
   ModelListView,
   QuickSearch,
@@ -89,18 +88,9 @@ const updateChart = (state: State): State => {
 };
 
 window.addEventListener("load", async () => {
-  var ui = new firebaseui.auth.AuthUI(firebase.auth());
-  const auth = firebase.auth();
-
-  if (!auth) {
-    ui.start("#firebaseui-auth-container", {
-      signInOptions: [firebase.auth.EmailAuthProvider.PROVIDER_ID],
-      signInSuccessUrl: window.location.href,
-    });
-    return;
-  }
-  // Authorized
   const state: State = {
+    googleToken: null,
+    sheetId: "1ywvFgv4YQGTOPddovWhQ0D_B5URN2NAp7y4yMGoCtoA",
     models: [],
     channels: [],
     inputs: [],
@@ -109,14 +99,17 @@ window.addEventListener("load", async () => {
     chartInputs: { days: 90, offsetDay: 0 },
     chart: { data: [], profitLoss: [], profit: 0, loss: 0 },
   };
-  const db = firebase.firestore(app);
-  await reloadRemoteData(db);
-  await addRemoteState(state);
-  updateChart(state);
 
   const upd8 = initUI(state, async (event) => {
     await matchEnum(event, async (ev, value) => {
       switch (ev) {
+        case "SignedIn": {
+          state.googleToken = value.credential;
+          await reloadRemoteData(state.googleToken, state.sheetId);
+          await addRemoteState(state);
+          updateChart(state);
+          break;
+        }
         case "GoBack": {
           switch (state.showingScreen) {
             case "Model":

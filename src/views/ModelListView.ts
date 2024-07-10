@@ -24,7 +24,7 @@ export class ModelListView extends View {
   }
 
   showing(state: State): boolean {
-    return state.showingScreen === "Models";
+    return !!state.googleToken && state.showingScreen === "Models";
   }
 
   updated() {
