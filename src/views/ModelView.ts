@@ -23,7 +23,7 @@ export class ModelView extends View {
         el,
         "click",
         () => {
-          this.dispatchEvent({ ChooseChannel: { modelGuid: this.modelGuid } });
+          this.dispatchEvent({ ChooseChannel: { guid: this.modelGuid } });
         },
         ".add"
       ),
@@ -46,7 +46,7 @@ export class ModelView extends View {
         "click",
         (_, d) => {
           const guid = invariant(d.dataset.guid, "guid");
-          this.dispatchEvent({ EditChannel: { guid } });
+          this.dispatchEvent({ ShowChannel: { guid } });
         },
         ".edit"
       ),

@@ -9,10 +9,10 @@ export type NDEvent =
       CreateModel: { name: string };
     }
   | {
-      CreateChannel: { name: string; modelGuid: string };
+      CreateChannel: { name: string; guid: string };
     }
   | {
-      CreateInput: { name: string; channnelGuid: string };
+      CreateInput: { name: string; guid: string };
     }
   | {
       ShowModel: { guid: string };

@@ -1,4 +1,3 @@
-import { NDEvent } from "../events";
 import { State } from "../types";
 import { invariant } from "../utils";
 import { View } from "./View";
@@ -64,10 +63,28 @@ export class QuickSearch extends View {
             | "ChooseChannel"
             | "ChooseInput";
           // @ts-expect-error too fancy
-          this.dispatchEvent({ [eventName]: e.dataset.guid! });
+          this.dispatchEvent({ [eventName]: { guid: e.dataset.guid! } });
         },
         ".result"
       ),
+      this.eventListener("create-result", "click", () => {
+        const eventName = `Create${this.state.quickSearch}` as
+          | "CreateChannel"
+          | "CreateInput";
+        console.log({
+          [eventName]: {
+            name: this.input.value!,
+            guid: this.state.quickSearchGuid,
+          },
+        });
+        // @ts-expect-error too fancy
+        this.dispatchEvent({
+          [eventName]: {
+            name: this.input.value!,
+            guid: this.state.quickSearchGuid,
+          },
+        });
+      }),
     ];
   }
 

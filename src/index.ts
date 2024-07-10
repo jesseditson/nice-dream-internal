@@ -4,95 +4,22 @@ import * as firebaseui from "firebaseui";
 import feather from "feather-icons";
 import { cre8 } from "upd8";
 import { NDEvent } from "./events";
-import { Channel, Curve, Input, Model, State } from "./types";
+import { State } from "./types";
 import { ModelView } from "./views/ModelView";
 import { ModelListView } from "./views/ModelListView";
-import { invariant, matchEnum } from "./utils";
+import { matchEnum } from "./utils";
 import { Nav } from "./views/Nav";
 import { QuickSearch } from "./views/QuickSearch";
+import { ChannelView } from "./views/ChannelView";
+import { app, addRemoteState, reloadRemoteData } from "./data";
 
 const initUI = cre8<State, NDEvent>([
   Nav,
   ModelView,
   ModelListView,
   QuickSearch,
+  ChannelView,
 ]);
-
-const app = firebase.initializeApp({
-  apiKey: "AIzaSyCjURzjH7ZuL7H5qmnqXVypuw9PxN-0CnU",
-  authDomain: "nice-dream-internal.firebaseapp.com",
-  projectId: "nice-dream-internal",
-  storageBucket: "nice-dream-internal.appspot.com",
-  messagingSenderId: "29371168583",
-  appId: "1:29371168583:web:41f389e735e5efe53b3e62",
-});
-
-const getMap = async <T>(
-  db: firebase.firestore.Firestore,
-  name: string
-): Promise<Map<string, T>> => {
-  const objects = await db.collection(name).get();
-  const oMap = new Map();
-  objects.forEach((obj) => {
-    oMap.set(obj.id, { ...obj.data(), guid: obj.id });
-  });
-  return oMap;
-};
-
-const getRemoteState = async (
-  db: firebase.firestore.Firestore
-): Promise<State> => {
-  const [models, inputs, channels, curves] = await Promise.all([
-    getMap<Model<firebase.firestore.DocumentReference>>(db, "models"),
-    getMap<Input<firebase.firestore.DocumentReference>>(db, "inputs"),
-    getMap<Channel<firebase.firestore.DocumentReference>>(db, "channels"),
-    getMap<Curve>(db, "curves"),
-  ]);
-
-  const derefInput = (id: string): State["inputs"][0] => {
-    const i = invariant(inputs.get(id), `Missing input ref: ${id}`);
-    return {
-      ...i,
-      curve: invariant(
-        curves.get(i.curve.id),
-        `Missing curve ref: ${i.curve.id}`
-      ),
-    };
-  };
-
-  const derefChannel = (id: string): State["channels"][0] => {
-    const c = invariant(channels.get(id), `Missing channel ref: ${id}`);
-    return {
-      ...c,
-      inputs: c.inputs.map((i) => derefInput(i.id)),
-    };
-  };
-
-  const state: State = {
-    models: [],
-    channels: [],
-    inputs: [],
-    quickSearch: "Channel",
-    showingScreen: "Models",
-    expandedChannels: new Set(),
-    chartInputs: { days: 365, offsetDay: 0 },
-    chart: { data: [], profitLoss: [] },
-  };
-
-  models.forEach((model) => {
-    state.models.push({
-      ...model,
-      channels: model.channels.map((channel) => derefChannel(channel.id)),
-    });
-  });
-  channels.forEach((_, id) => {
-    state.channels.push(derefChannel(id));
-  });
-  inputs.forEach((_, id) => {
-    state.inputs.push(derefInput(id));
-  });
-  return state;
-};
 
 type Accumulator = { currentCount: number; isSaturated: boolean };
 const defaultAccumulator = (currentCount: number): Accumulator => ({
@@ -164,12 +91,22 @@ window.addEventListener("load", async () => {
     return;
   }
   // Authorized
+  const state: State = {
+    models: [],
+    channels: [],
+    inputs: [],
+    showingScreen: "Models",
+    expandedChannels: new Set(),
+    chartInputs: { days: 365, offsetDay: 0 },
+    chart: { data: [], profitLoss: [] },
+  };
   const db = firebase.firestore(app);
-  const state = await getRemoteState(db);
+  await reloadRemoteData(db);
+  await addRemoteState(state);
   updateChart(state);
 
-  const upd8 = initUI(state, (event) => {
-    matchEnum(event, (ev, value) => {
+  const upd8 = initUI(state, async (event) => {
+    await matchEnum(event, async (ev, value) => {
       switch (ev) {
         case "GoBack": {
           switch (state.showingScreen) {
@@ -184,6 +121,9 @@ window.addEventListener("load", async () => {
               break;
             case "Input":
               state.showingScreen = "Inputs";
+              break;
+            case "Channel":
+              state.showingScreen = "Model";
               break;
           }
           break;
@@ -215,14 +155,33 @@ window.addEventListener("load", async () => {
         }
         case "ChooseChannel": {
           state.quickSearch = "Channel";
+          state.quickSearchGuid = value.guid;
           break;
         }
         case "ChooseInput": {
           state.quickSearch = "Input";
+          state.quickSearchGuid = value.guid;
           break;
         }
         case "CancelSearch": {
           state.quickSearch = undefined;
+          state.quickSearchGuid = undefined;
+          break;
+        }
+        case "CreateChannel": {
+          const newChannel = await db.collection("channels").add({
+            name: value.name,
+          });
+          await db
+            .collection("models")
+            .doc(value.guid)
+            .update({
+              channel: firebase.firestore.FieldValue.arrayUnion(
+                `/channels/${newChannel.id}`
+              ),
+            });
+          await reloadRemoteData(db);
+          addRemoteState(state);
           break;
         }
       }
