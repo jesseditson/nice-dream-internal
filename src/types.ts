@@ -33,7 +33,7 @@ export type Model<C = Channel> = {
 };
 
 export type State = {
-  googleToken: string | null;
+  googleToken: google.accounts.oauth2.TokenResponse | null;
   sheetId: string;
   models: Model[];
   channels: Channel[];

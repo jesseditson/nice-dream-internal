@@ -1,6 +1,10 @@
 export const googleAPI =
   (token: string, baseURL: string) =>
-  async (method: "GET" | "POST" | "PUT", endpoint: string, body?: Object) => {
+  async <T>(
+    method: "GET" | "POST" | "PUT",
+    endpoint: string,
+    body?: Object
+  ) => {
     const res = await fetch(`${baseURL}/${endpoint}`, {
       method,
       headers: {
@@ -13,5 +17,9 @@ export const googleAPI =
     if (!res.ok) {
       throw new Error(`Google API Error: ${await res.text()}`);
     }
-    return res.json();
+    return res.json() as T;
   };
+
+// declare global {
+//   const google: typeof import("google-one-tap");
+// }

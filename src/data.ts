@@ -1,41 +1,31 @@
-import firebase from "firebase/compat/app";
-import "firebase/compat/firestore";
 import { invariant } from "./utils";
 import { Channel, Curve, Input, Model, State } from "./types";
+import { googleAPI } from "./google";
 
-export const app = firebase.initializeApp({
-  apiKey: "AIzaSyCjURzjH7ZuL7H5qmnqXVypuw9PxN-0CnU",
-  authDomain: "nice-dream-internal.firebaseapp.com",
-  projectId: "nice-dream-internal",
-  storageBucket: "nice-dream-internal.appspot.com",
-  messagingSenderId: "29371168583",
-  appId: "1:29371168583:web:41f389e735e5efe53b3e62",
-});
+type SheetName = "Inputs" | "Models" | "Curves";
 
 const getMap = async <T>(
-  db: firebase.firestore.Firestore,
-  name: string
+  google: ReturnType<typeof googleAPI>,
+  name: SheetName
 ): Promise<Map<string, T>> => {
-  const objects = await db.collection(name).get();
   const oMap = new Map();
-  objects.forEach((obj) => {
-    oMap.set(obj.id, { ...obj.data(), guid: obj.id });
-  });
+  switch (name) {
+    case "Inputs":
+      const inputs = await google(
+        "GET",
+        "values/Inputs!A:G?majorDimension=ROWS"
+      );
+      console.log(inputs);
+  }
+  // objects.forEach((obj) => {
+  //   oMap.set(obj.id, { ...obj.data(), guid: obj.id });
+  // });
   return oMap;
 };
 
-export let models: Map<
-  string,
-  Model<firebase.firestore.DocumentReference>
-> = new Map();
-export let inputs: Map<
-  string,
-  Input<firebase.firestore.DocumentReference>
-> = new Map();
-export let channels: Map<
-  string,
-  Channel<firebase.firestore.DocumentReference>
-> = new Map();
+export let models: Map<string, Model<number>> = new Map();
+export let inputs: Map<string, Input<number>> = new Map();
+export let channels: Map<string, Channel<number>> = new Map();
 export let curves: Map<string, Curve> = new Map();
 
 export const derefInput = (id: string): State["inputs"][0] => {
@@ -57,12 +47,18 @@ export const derefChannel = (id: string): State["channels"][0] => {
   };
 };
 
-export const reloadRemoteData = async (db: firebase.firestore.Firestore) => {
-  [models, inputs, channels, curves] = await Promise.all([
-    getMap<Model<firebase.firestore.DocumentReference>>(db, "models"),
-    getMap<Input<firebase.firestore.DocumentReference>>(db, "inputs"),
-    getMap<Channel<firebase.firestore.DocumentReference>>(db, "channels"),
-    getMap<Curve>(db, "curves"),
+export const reloadRemoteData = async (
+  token: typeof google.accounts.oauth2.TokenResponse,
+  sheetId: string
+) => {
+  const google = googleAPI(
+    token.access_token,
+    `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}`
+  );
+  [models, inputs, curves] = await Promise.all([
+    getMap<Model<number>>(google, "Models"),
+    getMap<Input<number>>(google, "Inputs"),
+    getMap<Curve>(google, "Curves"),
   ]);
 };
 

@@ -1,7 +1,7 @@
 import { Input } from "./types";
 
 export type NDEvent =
-  | { SignedIn: { credential: string; select_by?: string } }
+  | { SignedIn: { token: google.accounts.oauth2.TokenResponse } }
   | "GoBack"
   | "NewModel"
   | "NewChannel"

@@ -104,7 +104,7 @@ window.addEventListener("load", async () => {
     await matchEnum(event, async (ev, value) => {
       switch (ev) {
         case "SignedIn": {
-          state.googleToken = value.credential;
+          state.googleToken = value.token;
           await reloadRemoteData(state.googleToken, state.sheetId);
           await addRemoteState(state);
           updateChart(state);
