@@ -36,9 +36,7 @@ const updateChart = (state: State): State => {
     for (let day = offsetDay + 1; day <= days; day++) {
       let dayRevenue = 0;
       model.inputs.forEach((i) => {
-        const dailyGrowth = i.growthFreq
-          ? (i.growthPercent * 0.01) / i.growthFreq
-          : 0;
+        const dailyGrowth = i.growthFreq ? i.growthPercent / i.growthFreq : 0;
         if (!acc[i.guid]) {
           acc[i.guid] = defaultAccumulator(i.seed);
         }
