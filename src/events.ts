@@ -9,35 +9,35 @@ export type NDEvent =
       CreateModel: { name: string };
     }
   | {
-      CreateInput: { name: string; guid: string };
+      CreateInput: { name: string; number: number };
     }
   | {
-      ShowModel: { guid: string };
+      ShowModel: { number: number };
     }
   | {
-      ShowInput: { guid: string };
+      ShowInput: { number: number };
     }
   | {
-      ChooseInput: { guid: string };
+      ChooseInput: { number: number };
     }
   | "CancelSearch"
   | {
-      AddInput: { inputGuid: string; modelGuid: string };
+      AddInput: { inputNumber: number; modelNumber: number };
     }
   | {
-      RemoveInput: { inputGuid: string; modelGuid: string };
+      RemoveInput: { inputNumber: number; modelNumber: number };
     }
   | {
-      EditInput: Partial<Omit<Input, "curve"> & { curveGuid: string }>;
+      EditInput: Partial<Omit<Input, "curve"> & { curveNumber: number }>;
     }
   | {
-      EditModel: Partial<{ guid: string; name: string }>;
+      EditModel: Partial<{ number: number; name: string }>;
     }
   | {
-      ToggleInputShowing: { guid: string };
+      ToggleInputShowing: { number: number };
     }
   | {
-      SetInputValue: { guid: string; field: keyof Input; value: number };
+      SetInputValue: { number: number; field: keyof Input; value: number };
     }
   | {
       UpdateChart: { days: number; offset: number };

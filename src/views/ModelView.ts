@@ -2,6 +2,16 @@ import * as Plot from "@observablehq/plot";
 import { View } from "./View";
 import { Input, State } from "../state";
 import { invariant } from "../utils";
+import { curves } from "../data";
+
+const getDatasetNumber = (el: HTMLElement, name: string) => {
+  const v = invariant(el.dataset[name], `number from data-${name}`);
+  const n = parseInt(v);
+  if (isNaN(n)) {
+    throw new Error(`${v} is not a number`);
+  }
+  return n;
+};
 
 export class ModelView extends View {
   static get id() {
@@ -12,8 +22,8 @@ export class ModelView extends View {
     return ModelView.id;
   }
 
-  get modelGuid() {
-    return this.state.chartInputs.model!.guid;
+  get modelNumber() {
+    return this.state.chartInputs.model!.number;
   }
 
   mount() {
@@ -23,7 +33,7 @@ export class ModelView extends View {
         el,
         "click",
         () => {
-          this.dispatchEvent({ ChooseInput: { guid: this.modelGuid } });
+          this.dispatchEvent({ ChooseInput: { number: this.modelNumber } });
         },
         ".add"
       ),
@@ -31,11 +41,11 @@ export class ModelView extends View {
         el,
         "click",
         (_, d) => {
-          const inputGuid = invariant(d.dataset.guid, "guid");
+          const inputNumber = getDatasetNumber(d, "number");
           this.dispatchEvent({
             RemoveInput: {
-              inputGuid,
-              modelGuid: this.modelGuid,
+              inputNumber,
+              modelNumber: this.modelNumber,
             },
           });
         },
@@ -45,8 +55,8 @@ export class ModelView extends View {
         el,
         "click",
         (_, d) => {
-          const guid = invariant(d.dataset.guid, "guid");
-          this.dispatchEvent({ ShowInput: { guid } });
+          const number = getDatasetNumber(d, "number");
+          this.dispatchEvent({ ShowInput: { number } });
         },
         ".edit"
       ),
@@ -54,8 +64,8 @@ export class ModelView extends View {
         el,
         "click",
         (_, d) => {
-          const guid = invariant(d.dataset.guid, "guid");
-          this.dispatchEvent({ ToggleInputShowing: { guid } });
+          const number = getDatasetNumber(d, "number");
+          this.dispatchEvent({ ToggleInputShowing: { number } });
         },
         ".toggle, .collection .name"
       ),
@@ -65,10 +75,10 @@ export class ModelView extends View {
         el,
         "change",
         (_, el) => {
-          const guid = invariant(el.dataset.guid, "guid");
+          const number = getDatasetNumber(el, "number");
           const field = invariant(el.dataset.field, "field") as keyof Input;
           const value = parseFloat((el as HTMLInputElement).value);
-          this.dispatchEvent({ SetInputValue: { guid, value, field } });
+          this.dispatchEvent({ SetInputValue: { number, value, field } });
         },
         ".input-field"
       ),
@@ -87,7 +97,25 @@ export class ModelView extends View {
 
   // https://leebyron.com/streamgraph/
   getChart(container: HTMLElement) {
-    const { data, profitLoss } = this.state.chart;
+    const chartMarks: Plot.Markish[] = [];
+    this.state.charts.forEach(({ data, profitLoss, name }) => {
+      chartMarks.push(
+        Plot.areaY(data, {
+          x: "day",
+          y: "revenue",
+          z: "input",
+          fill: "input",
+          tip: name === "mid",
+          fillOpacity: 0.8,
+        }),
+        Plot.lineY(profitLoss, {
+          x: "day",
+          y: "total",
+          tip: true,
+          stroke: () => name,
+        })
+      );
+    });
     return Plot.plot({
       width: container.clientWidth,
       y: {
@@ -100,21 +128,7 @@ export class ModelView extends View {
         label: "Day →",
       },
       color: { legend: true, scheme: "pastel2" },
-      marks: [
-        Plot.ruleY([0]),
-        Plot.areaY(data, {
-          x: "day",
-          y: "revenue",
-          z: "input",
-          fill: "input",
-          tip: true,
-        }),
-        Plot.lineY(profitLoss, {
-          x: "day",
-          y: "total",
-          tip: true,
-        }),
-      ],
+      marks: [Plot.ruleY([0]), ...chartMarks],
     });
   }
 
@@ -124,8 +138,8 @@ export class ModelView extends View {
   renderInputValues(element: HTMLElement, input: Input) {
     (
       [
-        "avgSize",
-        "avgFreq",
+        "size",
+        "frequency",
         "growthPercent",
         "growthFreq",
         "saturation",
@@ -135,8 +149,26 @@ export class ModelView extends View {
     ).forEach((field) => {
       const value = input[field] as string;
       this.setAttrs(element, { value }, `.${field}`);
-      this.setData(element, { guid: input.guid, field }, `.${field}`);
+      this.setData(
+        element,
+        { number: input.number.toString(), field },
+        `.${field}`
+      );
     });
+    const selectedCurves = new Set(input.curves.map((c) => c.number));
+    this.setContent(
+      element,
+      Array.from(curves.entries()).map(([num, curve]) => {
+        const opt = document.createElement("option");
+        opt.value = `${num}`;
+        if (selectedCurves.has(num)) {
+          this.setAttrs(opt, { selected: "selected" });
+        }
+        this.setContent(opt, curve.name);
+        return opt;
+      }),
+      ".curves"
+    );
   }
 
   updated() {
@@ -152,11 +184,12 @@ export class ModelView extends View {
       model.inputs.map((i) => {
         const cEl = this.template("collection-row");
         this.setContent(cEl, i.name, ".name");
-        this.setData(cEl, { guid: i.guid }, ".name");
-        this.setData(cEl, { guid: i.guid }, ".delete");
-        this.setData(cEl, { guid: i.guid }, ".edit");
-        this.setData(cEl, { guid: i.guid }, ".toggle");
-        const showItems = this.state.openInputs.has(i.guid);
+        const number = i.number.toString();
+        this.setData(cEl, { number }, ".name");
+        this.setData(cEl, { number }, ".delete");
+        this.setData(cEl, { number }, ".edit");
+        this.setData(cEl, { number }, ".toggle");
+        const showItems = this.state.openInputs.has(i.number);
         const toggleIcon = document.createElement("i");
         toggleIcon.dataset.feather = showItems
           ? "chevron-down"
@@ -181,11 +214,15 @@ export class ModelView extends View {
       style: "currency",
       currency: "USD",
     });
-    this.setContent("profit", mf.format(this.state.chart.profit));
-    this.setContent("loss", `(${mf.format(this.state.chart.loss)})`);
-    this.setContent(
-      "net",
-      mf.format(this.state.chart.profit - this.state.chart.loss)
-    );
+    ["low", "mid", "high"].forEach((n) => {
+      const chart = this.state.charts.find((c) => c.name === n);
+      if (!chart) {
+        console.error("chart", n, "not found");
+        return;
+      }
+      this.setContent(`profit-${n}`, mf.format(chart.profit));
+      this.setContent(`loss-${n}`, `(${mf.format(chart.loss)})`);
+      this.setContent(`net-${n}`, mf.format(chart.profit - chart.loss));
+    });
   }
 }

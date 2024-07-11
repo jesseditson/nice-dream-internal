@@ -2,24 +2,37 @@
   <h1 id="name" class="text-2xl font-bold"></h1>
   <div class="flex justify-between">
     <div class="flex gap-2">
-      {% comment %} <label>offset <input
-                  id="offset"
-                  type="range"
-                  min="0"
-                  max="365"
-                value="0" /></label> {% endcomment %}
+      {% comment %}
+        <label>offset <input
+        id="offset"
+        type="range"
+        min="0"
+        max="365"
+        value="0" /></label>
+      {% endcomment %}
     </div>
-    <div class="grid grid-cols-2">
+    <div class="grid grid-cols-4 gap-2">
       days: <input
+        class="col-span-3"
         id="days"
         type="number"
         value="0" />
+      <span></span>
+      <span>low</span>
+      <span>mid</span>
+      <span>high</span>
       profit:
-      <span id="profit"></span>
+      <span id="profit-low"></span>
+      <span id="profit-mid"></span>
+      <span id="profit-high"></span>
       loss:
-      <span id="loss"></span>
+      <span id="loss-low"></span>
+      <span id="loss-mid"></span>
+      <span id="loss-high"></span>
       net:
-      <span id="net"></span>
+      <span id="net-low"></span>
+      <span id="net-mid"></span>
+      <span id="net-high"></span>
     </div>
   </div>
 

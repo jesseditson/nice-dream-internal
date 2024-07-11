@@ -1,5 +1,5 @@
 export type Curve = {
-  guid: string;
+  number: number;
   name: string;
   curve: number[];
   notes: string;
@@ -7,11 +7,11 @@ export type Curve = {
 };
 
 export type Input<C = Curve> = {
-  guid: string;
+  number: number;
   name: string;
-  avgFreq: number;
-  avgSize: number;
-  curve: C;
+  frequency: number;
+  size: number;
+  curves: C[];
   growthPercent: number;
   growthFreq: number;
   notes: string;
@@ -21,7 +21,7 @@ export type Input<C = Curve> = {
 };
 
 export type Model<I = Input> = {
-  guid: string;
+  number: number;
   name: string;
   inputs: I[];
 };
@@ -36,12 +36,13 @@ export type State = {
     offsetDay: number;
     model?: Model;
   };
-  openInputs: Set<string>;
+  openInputs: Set<number>;
   showingInput?: Input;
   quickSearch?: "Input";
-  quickSearchGuid?: string;
+  quickSearchNumber?: number;
   showingScreen: "Models" | "Inputs" | "Model" | "Input";
-  chart: {
+  charts: {
+    name: string;
     data: {
       day: number;
       input: string;
@@ -51,5 +52,5 @@ export type State = {
     profit: number;
     loss: number;
     profitLoss: { day: number; total: number }[];
-  };
+  }[];
 };

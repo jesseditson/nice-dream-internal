@@ -58,7 +58,9 @@ export class QuickSearch extends View {
         "click",
         (_, e) => {
           const eventName = `Choose${this.state.quickSearch}` as "ChooseInput";
-          this.dispatchEvent({ [eventName]: { guid: e.dataset.guid! } });
+          this.dispatchEvent({
+            [eventName]: { number: parseInt(e.dataset.number!) },
+          });
         },
         ".result"
       ),
@@ -67,7 +69,7 @@ export class QuickSearch extends View {
         this.dispatchEvent({
           [eventName]: {
             name: this.input.value!,
-            guid: this.state.quickSearchGuid!,
+            number: this.state.quickSearchNumber!,
           },
         });
       }),

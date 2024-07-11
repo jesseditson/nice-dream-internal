@@ -1,7 +1,7 @@
 import feather from "feather-icons";
 import { cre8 } from "upd8";
 import { NDEvent } from "./events";
-import { State } from "./state";
+import { Model, State } from "./state";
 import { ModelView } from "./views/ModelView";
 import { ModelListView } from "./views/ModelListView";
 import { matchEnum } from "./utils";
@@ -27,9 +27,9 @@ const defaultAccumulator = (currentCount: number): Accumulator => ({
 });
 const updateChart = (state: State): State => {
   const { model, days, offsetDay } = state.chartInputs;
-  if (model) {
-    const data: State["chart"]["data"] = [];
-    const profitLoss: State["chart"]["profitLoss"] = [];
+  const addChart = (name: string, model: Model, gMult: number) => {
+    const data: State["charts"][0]["data"] = [];
+    const profitLoss: State["charts"][0]["profitLoss"] = [];
     let acc: Record<string, Accumulator> = {};
     let profit = 0;
     let loss = 0;
@@ -37,18 +37,23 @@ const updateChart = (state: State): State => {
       let dayRevenue = 0;
       model.inputs.forEach((i) => {
         const dailyGrowth = i.growthFreq ? i.growthPercent / i.growthFreq : 0;
-        if (!acc[i.guid]) {
-          acc[i.guid] = defaultAccumulator(i.seed);
+        if (!acc[i.number]) {
+          acc[i.number] = defaultAccumulator(i.seed);
         }
-        if (!acc[i.guid].isSaturated) {
-          acc[i.guid].currentCount =
-            acc[i.guid].currentCount + acc[i.guid].currentCount * dailyGrowth;
+        if (!acc[i.number].isSaturated) {
+          acc[i.number].currentCount =
+            acc[i.number].currentCount +
+            acc[i.number].currentCount * dailyGrowth;
         }
-        const count = Math.round(acc[i.guid].currentCount);
+        let count = Math.round(acc[i.number].currentCount);
         if (count >= i.saturation) {
-          acc[i.guid].isSaturated = true;
+          acc[i.number].isSaturated = true;
         }
-        const revenue = (count / i.avgFreq) * i.avgSize;
+        i.curves.forEach((c) => {
+          count = count * c.curve[day % c.period];
+        });
+        count = count * ((i.variability + 1) * gMult);
+        const revenue = (count / i.frequency) * i.size;
         dayRevenue += revenue;
         if (revenue >= 0) {
           profit += revenue;
@@ -64,12 +69,18 @@ const updateChart = (state: State): State => {
       });
       profitLoss.push({ day, total: dayRevenue });
     }
-    state.chart = {
+    state.charts.push({
+      name,
       data,
       profitLoss,
       profit,
       loss,
-    };
+    });
+  };
+  if (model) {
+    addChart("high", model, 2);
+    addChart("mid", model, 1);
+    addChart("low", model, 0);
   }
   return state;
 };
@@ -83,7 +94,7 @@ window.addEventListener("load", async () => {
     openInputs: new Set(),
     showingScreen: "Models",
     chartInputs: { days: 90, offsetDay: 0 },
-    chart: { data: [], profitLoss: [], profit: 0, loss: 0 },
+    charts: [],
   };
 
   const upd8 = initUI(state, async (event) => {
@@ -111,7 +122,7 @@ window.addEventListener("load", async () => {
           break;
         }
         case "ShowModel": {
-          const model = state.models.find((m) => m.guid === value!.guid);
+          const model = state.models.find((m) => m.number === value!.number);
           if (model) {
             state.chartInputs.model = model;
             updateChart(state);
@@ -120,27 +131,27 @@ window.addEventListener("load", async () => {
           break;
         }
         case "ToggleInputShowing": {
-          if (state.openInputs.has(value.guid)) {
-            state.openInputs.delete(value.guid);
+          if (state.openInputs.has(value.number)) {
+            state.openInputs.delete(value.number);
           } else {
-            state.openInputs.add(value.guid);
+            state.openInputs.add(value.number);
           }
           break;
         }
         case "SetInputValue": {
-          setInputData(value.guid, value.field, value.value);
+          setInputData(value.number, value.field, value.value);
           addRemoteState(state);
           updateChart(state);
           break;
         }
         case "ChooseInput": {
           state.quickSearch = "Input";
-          state.quickSearchGuid = value.guid;
+          state.quickSearchNumber = value.number;
           break;
         }
         case "CancelSearch": {
           state.quickSearch = undefined;
-          state.quickSearchGuid = undefined;
+          state.quickSearchNumber = undefined;
           break;
         }
         case "CreateInput": {

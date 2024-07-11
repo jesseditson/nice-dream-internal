@@ -17,7 +17,7 @@ export class InputView extends View {
 
   mount() {
     const el = invariant(this.rootElement, "input root");
-    const guid = this.input.guid;
+    const number = this.input.number;
     return [];
   }
 

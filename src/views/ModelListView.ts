@@ -16,7 +16,9 @@ export class ModelListView extends View {
         this.rootElement!,
         "click",
         (_, el) => {
-          this.dispatchEvent({ ShowModel: { guid: el.dataset.guid! } });
+          this.dispatchEvent({
+            ShowModel: { number: parseInt(el.dataset.number!) },
+          });
         },
         ".button"
       ),
@@ -36,7 +38,7 @@ export class ModelListView extends View {
         const mEl = this.template("list-item");
         this.setContent(mEl, m.name, ".name");
         this.setAttrs(mEl, { title: m.name }, ".button");
-        this.setData(mEl, { guid: m.guid }, ".button");
+        this.setData(mEl, { number: m.number.toString() }, ".button");
         return mEl;
       }),
       ".list"
