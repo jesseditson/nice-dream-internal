@@ -106,7 +106,8 @@ export class ModelView extends View {
           y: "revenue",
           z: "input",
           fill: "input",
-          offset: "wiggle",
+          // offset: "wiggle",
+          tip: true,
         }),
         Plot.lineY(profitLoss, {
           x: "day",
