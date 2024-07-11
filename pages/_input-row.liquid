@@ -1,47 +1,54 @@
-<div class="flex gap-4 flex-wrap">
-  <label>
+<div class="grid gap-4 grid-cols-2 md:grid-cols-4">
+  <label class="flex gap-2 items-center">
     size: <input
-      class="size input-field"
+      class="size input-field text-lg w-20"
       data-field="size"
+      step="1"
       type="number" />
   </label>
-  <label>
+  <label class="flex gap-2 items-center">
     frequency: <input
-      class="frequency input-field"
+      class="frequency input-field text-lg w-20"
       data-field="frequency"
+      step="1"
       type="number" />
   </label>
-  <label>
+  <label class="flex gap-2 items-center">
     growth %: <input
-      class="growthPercent input-field"
+      class="growthPercent input-field text-lg w-20"
       data-field="growthPercent"
+      step="0.01"
       type="number" />
   </label>
-  <label>
+  <label class="flex gap-2 items-center">
     growth frequency: <input
-      class="growthFreq input-field"
+      class="growthFreq input-field text-lg w-20"
       data-field="growthFreq"
+      step="1"
       type="number" />
   </label>
-  <label>
+  <label class="flex gap-2 items-center">
     max saturation: <input
-      class="saturation input-field"
+      class="saturation input-field text-lg w-20"
       data-field="saturation"
+      step="1"
       type="number" />
   </label>
-  <label>
+  <label class="flex gap-2 items-center">
     seed: <input
-      class="seed input-field"
+      class="seed input-field text-lg w-20"
       data-field="seed"
+      step="1"
       type="number" />
   </label>
-  <label>
+  <label class="flex gap-2 items-center">
     variability: <input
-      class="variability input-field"
+      class="variability input-field text-lg w-20"
       data-field="variability"
+      step="0.1"
       type="number" />
   </label>
-  <label>
+  <label class="flex gap-2 items-center">
     curves:
     <select
       multiple="true"
