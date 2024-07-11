@@ -34,5 +34,11 @@ export type NDEvent =
       EditModel: Partial<{ guid: string; name: string }>;
     }
   | {
+      ToggleInputShowing: { guid: string };
+    }
+  | {
+      SetInputValue: { guid: string; field: keyof Input; value: number };
+    }
+  | {
       UpdateChart: { days: number; offset: number };
     };

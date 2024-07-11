@@ -1,6 +1,6 @@
 import * as Plot from "@observablehq/plot";
 import { View } from "./View";
-import { State } from "../state";
+import { Input, State } from "../state";
 import { invariant } from "../utils";
 
 export class ModelView extends View {
@@ -50,8 +50,28 @@ export class ModelView extends View {
         },
         ".edit"
       ),
-      this.eventListener("offset", "change", this.updateChartInputs.bind(this)),
+      this.eventListener(
+        el,
+        "click",
+        (_, d) => {
+          const guid = invariant(d.dataset.guid, "guid");
+          this.dispatchEvent({ ToggleInputShowing: { guid } });
+        },
+        ".toggle, .collection .name"
+      ),
+      // this.eventListener("offset", "change", this.updateChartInputs.bind(this)),
       this.eventListener("days", "change", this.updateChartInputs.bind(this)),
+      this.eventListener(
+        el,
+        "change",
+        (_, el) => {
+          const guid = invariant(el.dataset.guid, "guid");
+          const field = invariant(el.dataset.field, "field") as keyof Input;
+          const value = parseFloat((el as HTMLInputElement).value);
+          this.dispatchEvent({ SetInputValue: { guid, value, field } });
+        },
+        ".input-field"
+      ),
     ];
   }
 
@@ -59,7 +79,8 @@ export class ModelView extends View {
     this.dispatchEvent({
       UpdateChart: {
         days: Number.parseInt(this.el<HTMLInputElement>("days").value),
-        offset: Number.parseInt(this.el<HTMLInputElement>("offset").value),
+        offset: 0,
+        // offset: Number.parseInt(this.el<HTMLInputElement>("offset").value),
       },
     });
   }
@@ -67,7 +88,6 @@ export class ModelView extends View {
   // https://leebyron.com/streamgraph/
   getChart() {
     const { data, profitLoss } = this.state.chart;
-    console.log(data, profitLoss);
     return Plot.plot({
       y: {
         grid: true,
@@ -78,7 +98,7 @@ export class ModelView extends View {
       x: {
         label: "Day →",
       },
-      color: { legend: true },
+      color: { legend: true, scheme: "pastel2" },
       marks: [
         Plot.ruleY([0]),
         Plot.areaY(data, {
@@ -100,6 +120,23 @@ export class ModelView extends View {
   showing(state: State): boolean {
     return state.showingScreen === "Model";
   }
+  renderInputValues(element: HTMLElement, input: Input) {
+    (
+      [
+        "avgSize",
+        "avgFreq",
+        "growthPercent",
+        "growthFreq",
+        "saturation",
+        "seed",
+        "variability",
+      ] as (keyof Input)[]
+    ).forEach((field) => {
+      const value = input[field] as string;
+      this.setAttrs(element, { value }, `.${field}`);
+      this.setData(element, { guid: input.guid, field }, `.${field}`);
+    });
+  }
 
   updated() {
     // Possible optimization
@@ -114,33 +151,27 @@ export class ModelView extends View {
       model.inputs.map((i) => {
         const cEl = this.template("collection-row");
         this.setContent(cEl, i.name, ".name");
+        this.setData(cEl, { guid: i.guid }, ".name");
         this.setData(cEl, { guid: i.guid }, ".delete");
         this.setData(cEl, { guid: i.guid }, ".edit");
-        // this.setData(cEl, { guid: i.guid }, ".toggle");
-        this.findElement(cEl, ".toggle").classList.toggle("hidden", true);
-        this.findElement(cEl, ".items").classList.toggle("hidden", true);
-        // const toggleIcon = document.createElement("i");
-        // toggleIcon.dataset.feather = showItems
-        //   ? "chevron-down"
-        //   : "chevron-right";
-        // this.setContent(cEl, toggleIcon, ".toggle");
-        // if (showItems) {
-        //   this.setContent(
-        //     cEl,
-        //     c.inputs.map((i) => {
-        //       const iEl = this.template("collection-item");
-        //       this.setContent(iEl, i.name, ".name");
-        //       return iEl;
-        //     }),
-        //     ".items"
-        //   );
-        // }
+        this.setData(cEl, { guid: i.guid }, ".toggle");
+        const showItems = this.state.openInputs.has(i.guid);
+        const toggleIcon = document.createElement("i");
+        toggleIcon.dataset.feather = showItems
+          ? "chevron-down"
+          : "chevron-right";
+        this.setContent(cEl, toggleIcon, ".toggle");
+        this.findElement(cEl, ".items").classList.toggle("hidden", !showItems);
+        if (showItems) {
+          console.log(i);
+          this.renderInputValues(cEl, i);
+        }
         return cEl;
       }),
       ".collection"
     );
     this.setContent("inputs", channelCollection);
-    this.setAttrs("offset", { max: `${this.state.chartInputs.days}` });
+    // this.setAttrs("offset", { max: `${this.state.chartInputs.days}` });
     this.setAttrs("days", {
       min: `${this.state.chartInputs.offsetDay}`,
       value: `${this.state.chartInputs.days}`,

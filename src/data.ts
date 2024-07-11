@@ -84,6 +84,22 @@ export let models: Map<number, Model<number>> = new Map();
 export let inputs: Map<number, Input<number>> = new Map();
 export let curves: Map<number, Curve> = new Map();
 
+export const setInputData = (
+  guid: string,
+  field: keyof Input,
+  value: number
+) => {
+  const num = invariant(
+    parseInt(guid.match(/inputs-(\d+)/)![1], 10),
+    `bad guid ${guid}`
+  );
+  const i = invariant(inputs.get(num), `input ${num} not found`);
+  inputs.set(num, {
+    ...i,
+    [field]: value,
+  });
+};
+
 export const derefInput = (id: number): State["inputs"][0] => {
   const i = invariant(inputs.get(id), `Missing input ref: ${id}`);
   return {
@@ -108,15 +124,24 @@ export const reloadRemoteData = async (
 };
 
 export const addRemoteState = async (state: State): Promise<State> => {
-  console.log(models, inputs, curves);
-  models.forEach((model) => {
-    state.models.push({
-      ...model,
-      inputs: model.inputs.map((num) => derefInput(num)),
-    });
+  state.models = [];
+  models.forEach((m) => {
+    const model = {
+      ...m,
+      inputs: m.inputs.map((num) => derefInput(num)),
+    };
+    if (state.chartInputs.model?.guid === model.guid) {
+      state.chartInputs.model = model;
+    }
+    state.models.push(model);
   });
-  inputs.forEach((_, num) => {
-    state.inputs.push(derefInput(num));
+  state.inputs = [];
+  inputs.forEach((i, num) => {
+    const input = derefInput(num);
+    if (state.showingInput?.guid === i.guid) {
+      state.showingInput = input;
+    }
+    state.inputs.push(input);
   });
   return state;
 };

@@ -21,13 +21,14 @@
           </button>
         </div>
       </div>
-      <div>
-        <ul class="items hidden group px-4 py-2 flex flex-col justify-between border-b last:border-b-0">
-          <li data-template="collection-item">
-            <div class="name flex-1">Loading...</div>
-          </li>
-        </ul>
-      </div>
+      <ul class="items group px-4 py-2 flex flex-col justify-between border-b last:border-b-0">
+        {% if row_partial %}
+          {% include row_partial %}
+        {% endif %}
+        <li data-template="collection-item">
+          <div class="name flex-1">Loading...</div>
+        </li>
+      </ul>
     </li>
   </ul>
 </div>

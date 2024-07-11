@@ -36,6 +36,7 @@ export type State = {
     offsetDay: number;
     model?: Model;
   };
+  openInputs: Set<string>;
   showingInput?: Input;
   quickSearch?: "Input";
   quickSearchGuid?: string;

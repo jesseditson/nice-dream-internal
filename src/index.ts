@@ -7,7 +7,7 @@ import { ModelListView } from "./views/ModelListView";
 import { matchEnum } from "./utils";
 import { Nav } from "./views/Nav";
 import { QuickSearch } from "./views/QuickSearch";
-import { addRemoteState, reloadRemoteData } from "./data";
+import { addRemoteState, reloadRemoteData, setInputData } from "./data";
 import { SignInView } from "./views/SignInView";
 import { InputView } from "./views/InputView";
 
@@ -80,6 +80,7 @@ window.addEventListener("load", async () => {
     sheetId: "1ywvFgv4YQGTOPddovWhQ0D_B5URN2NAp7y4yMGoCtoA",
     models: [],
     inputs: [],
+    openInputs: new Set(),
     showingScreen: "Models",
     chartInputs: { days: 90, offsetDay: 0 },
     chart: { data: [], profitLoss: [], profit: 0, loss: 0 },
@@ -116,6 +117,20 @@ window.addEventListener("load", async () => {
             updateChart(state);
             state.showingScreen = "Model";
           }
+          break;
+        }
+        case "ToggleInputShowing": {
+          if (state.openInputs.has(value.guid)) {
+            state.openInputs.delete(value.guid);
+          } else {
+            state.openInputs.add(value.guid);
+          }
+          break;
+        }
+        case "SetInputValue": {
+          setInputData(value.guid, value.field, value.value);
+          addRemoteState(state);
+          updateChart(state);
           break;
         }
         case "ChooseInput": {
