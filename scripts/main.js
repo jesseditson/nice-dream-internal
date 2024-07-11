@@ -12932,10 +12932,10 @@ function maybeFrameAnchor(value = "middle") {
 }
 function inherit2(options = {}, ...rest) {
   let o = options;
-  for (const defaults8 of rest) {
-    for (const key in defaults8) {
+  for (const defaults9 of rest) {
+    for (const key in defaults9) {
       if (o[key] === void 0) {
-        const value = defaults8[key];
+        const value = defaults9[key];
         if (o === options)
           o = { ...o, [key]: value };
         else
@@ -15491,7 +15491,7 @@ function applyFrameAnchor({ frameAnchor }, { width, height, marginTop, marginRig
 
 // node_modules/@observablehq/plot/src/mark.js
 var Mark = class {
-  constructor(data, channels = {}, options = {}, defaults8) {
+  constructor(data, channels = {}, options = {}, defaults9) {
     const {
       facet = "auto",
       facetAnchor,
@@ -15505,7 +15505,7 @@ var Mark = class {
       marginRight = margin,
       marginBottom = margin,
       marginLeft = margin,
-      clip = defaults8?.clip,
+      clip = defaults9?.clip,
       channels: extraChannels,
       tip: tip2,
       render
@@ -15525,8 +15525,8 @@ var Mark = class {
     channels = maybeNamed(channels);
     if (extraChannels !== void 0)
       channels = { ...maybeChannels(extraChannels), ...channels };
-    if (defaults8 !== void 0)
-      channels = { ...styles(this, options, defaults8), ...channels };
+    if (defaults9 !== void 0)
+      channels = { ...styles(this, options, defaults9), ...channels };
     this.channels = Object.fromEntries(
       Object.entries(channels).map(([name, channel]) => {
         if (isOptions(channel.value)) {
@@ -17548,13 +17548,13 @@ var legendRegistry = /* @__PURE__ */ new Map([
   ["color", legendColor],
   ["opacity", legendOpacity]
 ]);
-function exposeLegends(scales, context, defaults8 = {}) {
+function exposeLegends(scales, context, defaults9 = {}) {
   return (key, options) => {
     if (!legendRegistry.has(key))
       throw new Error(`unknown legend type: ${key}`);
     if (!(key in scales))
       return;
-    return legendRegistry.get(key)(scales[key], legendOptions(context, defaults8[key], options), (key2) => scales[key2]);
+    return legendRegistry.get(key)(scales[key], legendOptions(context, defaults9[key], options), (key2) => scales[key2]);
   };
 }
 function legendOptions({ className, ...context }, { label, ticks: ticks2, tickFormat: tickFormat2 } = {}, options) {
@@ -18449,11 +18449,11 @@ function inferAxes(marks2, channelsByScale, options) {
   maybeAxis(axes, xAxis, axisX, "bottom", "top", options, x2);
   return axes;
 }
-function maybeAxis(axes, axis2, axisType, primary, secondary, defaults8, options) {
+function maybeAxis(axes, axis2, axisType, primary, secondary, defaults9, options) {
   if (!axis2)
     return;
   const both = isBoth(axis2);
-  options = axisOptions(both ? primary : axis2, defaults8, options);
+  options = axisOptions(both ? primary : axis2, defaults9, options);
   const { line: line2 } = options;
   if ((axisType === axisY || axisType === axisX) && line2 && !isNone(line2))
     axes.push(frame2(lineOptions(options)));
@@ -18469,8 +18469,8 @@ function maybeGrid(axes, grid, gridType, options) {
 function isBoth(value) {
   return /^\s*both\s*$/i.test(value);
 }
-function axisOptions(anchor, defaults8, {
-  line: line2 = defaults8.line,
+function axisOptions(anchor, defaults9, {
+  line: line2 = defaults9.line,
   ticks: ticks2,
   tickSize,
   tickSpacing,
@@ -18480,9 +18480,9 @@ function axisOptions(anchor, defaults8, {
   fontVariant,
   ariaLabel,
   ariaDescription,
-  label = defaults8.label,
+  label = defaults9.label,
   labelAnchor,
-  labelArrow = defaults8.labelArrow,
+  labelArrow = defaults9.labelArrow,
   labelOffset
 }) {
   return {
@@ -19459,6 +19459,230 @@ function lineY(data, { x: x2 = indexOf, y: y2 = identity6, ...options } = {}) {
   return new Line(data, maybeDenseIntervalX({ ...options, x: x2, y: y2 }));
 }
 
+// node_modules/@observablehq/plot/src/stats.js
+function ibetainv(p, a2, b) {
+  var EPS = 1e-8;
+  var a1 = a2 - 1;
+  var b1 = b - 1;
+  var j = 0;
+  var lna, lnb, pp, t, u, err, x2, al, h, w, afac;
+  if (p <= 0)
+    return 0;
+  if (p >= 1)
+    return 1;
+  if (a2 >= 1 && b >= 1) {
+    pp = p < 0.5 ? p : 1 - p;
+    t = Math.sqrt(-2 * Math.log(pp));
+    x2 = (2.30753 + t * 0.27061) / (1 + t * (0.99229 + t * 0.04481)) - t;
+    if (p < 0.5)
+      x2 = -x2;
+    al = (x2 * x2 - 3) / 6;
+    h = 2 / (1 / (2 * a2 - 1) + 1 / (2 * b - 1));
+    w = x2 * Math.sqrt(al + h) / h - (1 / (2 * b - 1) - 1 / (2 * a2 - 1)) * (al + 5 / 6 - 2 / (3 * h));
+    x2 = a2 / (a2 + b * Math.exp(2 * w));
+  } else {
+    lna = Math.log(a2 / (a2 + b));
+    lnb = Math.log(b / (a2 + b));
+    t = Math.exp(a2 * lna) / a2;
+    u = Math.exp(b * lnb) / b;
+    w = t + u;
+    if (p < t / w)
+      x2 = Math.pow(a2 * w * p, 1 / a2);
+    else
+      x2 = 1 - Math.pow(b * w * (1 - p), 1 / b);
+  }
+  afac = -gammaln(a2) - gammaln(b) + gammaln(a2 + b);
+  for (; j < 10; j++) {
+    if (x2 === 0 || x2 === 1)
+      return x2;
+    err = ibeta(x2, a2, b) - p;
+    t = Math.exp(a1 * Math.log(x2) + b1 * Math.log(1 - x2) + afac);
+    u = err / t;
+    x2 -= t = u / (1 - 0.5 * Math.min(1, u * (a1 / x2 - b1 / (1 - x2))));
+    if (x2 <= 0)
+      x2 = 0.5 * (x2 + t);
+    if (x2 >= 1)
+      x2 = 0.5 * (x2 + t + 1);
+    if (Math.abs(t) < EPS * x2 && j > 0)
+      break;
+  }
+  return x2;
+}
+function ibeta(x2, a2, b) {
+  var bt = x2 === 0 || x2 === 1 ? 0 : Math.exp(gammaln(a2 + b) - gammaln(a2) - gammaln(b) + a2 * Math.log(x2) + b * Math.log(1 - x2));
+  if (x2 < 0 || x2 > 1)
+    return false;
+  if (x2 < (a2 + 1) / (a2 + b + 2))
+    return bt * betacf(x2, a2, b) / a2;
+  return 1 - bt * betacf(1 - x2, b, a2) / b;
+}
+function betacf(x2, a2, b) {
+  var fpmin = 1e-30;
+  var m = 1;
+  var qab = a2 + b;
+  var qap = a2 + 1;
+  var qam = a2 - 1;
+  var c4 = 1;
+  var d = 1 - qab * x2 / qap;
+  var m2, aa, del, h;
+  if (Math.abs(d) < fpmin)
+    d = fpmin;
+  d = 1 / d;
+  h = d;
+  for (; m <= 100; m++) {
+    m2 = 2 * m;
+    aa = m * (b - m) * x2 / ((qam + m2) * (a2 + m2));
+    d = 1 + aa * d;
+    if (Math.abs(d) < fpmin)
+      d = fpmin;
+    c4 = 1 + aa / c4;
+    if (Math.abs(c4) < fpmin)
+      c4 = fpmin;
+    d = 1 / d;
+    h *= d * c4;
+    aa = -(a2 + m) * (qab + m) * x2 / ((a2 + m2) * (qap + m2));
+    d = 1 + aa * d;
+    if (Math.abs(d) < fpmin)
+      d = fpmin;
+    c4 = 1 + aa / c4;
+    if (Math.abs(c4) < fpmin)
+      c4 = fpmin;
+    d = 1 / d;
+    del = d * c4;
+    h *= del;
+    if (Math.abs(del - 1) < 3e-7)
+      break;
+  }
+  return h;
+}
+function gammaln(x2) {
+  var j = 0;
+  var cof = [
+    76.18009172947146,
+    -86.5053203294167,
+    24.01409824083091,
+    -1.231739572450155,
+    0.001208650973866179,
+    -5395239384953e-18
+  ];
+  var ser = 1.000000000190015;
+  var xx, y2, tmp;
+  tmp = (y2 = xx = x2) + 5.5;
+  tmp -= (xx + 0.5) * Math.log(tmp);
+  for (; j < 6; j++)
+    ser += cof[j] / ++y2;
+  return Math.log(2.506628274631 * ser / xx) - tmp;
+}
+function qt(p, dof) {
+  var x2 = ibetainv(2 * Math.min(p, 1 - p), 0.5 * dof, 0.5);
+  x2 = Math.sqrt(dof * (1 - x2) / x2);
+  return p > 0.5 ? x2 : -x2;
+}
+
+// node_modules/@observablehq/plot/src/marks/linearRegression.js
+var defaults8 = {
+  ariaLabel: "linear-regression",
+  fill: "currentColor",
+  fillOpacity: 0.1,
+  stroke: "currentColor",
+  strokeWidth: 1.5,
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+  strokeMiterlimit: 1
+};
+var LinearRegression = class extends Mark {
+  constructor(data, options = {}) {
+    const { x: x2, y: y2, z, ci = 0.95, precision = 4 } = options;
+    super(
+      data,
+      {
+        x: { value: x2, scale: "x" },
+        y: { value: y2, scale: "y" },
+        z: { value: maybeZ(options), optional: true }
+      },
+      options,
+      defaults8
+    );
+    this.z = z;
+    this.ci = +ci;
+    this.precision = +precision;
+    if (!(0 <= this.ci && this.ci < 1))
+      throw new Error(`invalid ci; not in [0, 1): ${ci}`);
+    if (!(this.precision > 0))
+      throw new Error(`invalid precision: ${precision}`);
+  }
+  render(index2, scales, channels, dimensions, context) {
+    const { x: X3, y: Y3, z: Z } = channels;
+    const { ci } = this;
+    return create2("svg:g", context).call(applyIndirectStyles, this, dimensions, context).call(applyTransform, this, scales).call(
+      (g) => g.selectAll().data(Z ? groupZ(index2, Z, this.z) : [index2]).enter().call(
+        (enter) => enter.append("path").attr("fill", "none").call(applyDirectStyles, this).call(applyGroupedChannelStyles, this, { ...channels, fill: null, fillOpacity: null }).attr("d", (I) => this._renderLine(I, X3, Y3)).call(
+          ci && !isNone(this.fill) ? (path2) => path2.select(pathBefore).attr("stroke", "none").call(applyDirectStyles, this).call(applyGroupedChannelStyles, this, {
+            ...channels,
+            stroke: null,
+            strokeOpacity: null,
+            strokeWidth: null
+          }).attr("d", (I) => this._renderBand(I, X3, Y3)) : () => {
+          }
+        )
+      )
+    ).node();
+  }
+};
+function pathBefore() {
+  return this.parentNode.insertBefore(this.ownerDocument.createElementNS(namespaces_default.svg, "path"), this);
+}
+var LinearRegressionY = class extends LinearRegression {
+  constructor(data, options) {
+    super(data, options);
+  }
+  _renderBand(I, X3, Y3) {
+    const { ci, precision } = this;
+    const [x12, x2] = extent(I, (i) => X3[i]);
+    const f = linearRegressionF(I, X3, Y3);
+    const g = confidenceIntervalF(I, X3, Y3, (1 - ci) / 2, f);
+    return area_default2().x((x3) => x3).y0((x3) => g(x3, -1)).y1((x3) => g(x3, 1))(range(x12, x2 - precision / 2, precision).concat(x2));
+  }
+  _renderLine(I, X3, Y3) {
+    const [x12, x2] = extent(I, (i) => X3[i]);
+    const f = linearRegressionF(I, X3, Y3);
+    return `M${x12},${f(x12)}L${x2},${f(x2)}`;
+  }
+};
+function linearRegressionY(data, { x: x2 = indexOf, y: y2 = identity6, stroke, fill = isNoneish(stroke) ? "currentColor" : stroke, ...options } = {}) {
+  return new LinearRegressionY(data, maybeDenseIntervalX({ ...options, x: x2, y: y2, fill, stroke }));
+}
+function linearRegressionF(I, X3, Y3) {
+  let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+  for (const i of I) {
+    const xi = X3[i];
+    const yi = Y3[i];
+    sumX += xi;
+    sumY += yi;
+    sumXY += xi * yi;
+    sumX2 += xi * xi;
+  }
+  const n = I.length;
+  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+  const intercept = (sumY - slope * sumX) / n;
+  return (x2) => slope * x2 + intercept;
+}
+function confidenceIntervalF(I, X3, Y3, p, f) {
+  const mean2 = sum(I, (i) => X3[i]) / I.length;
+  let a2 = 0, b = 0;
+  for (const i of I) {
+    a2 += (X3[i] - mean2) ** 2;
+    b += (Y3[i] - f(X3[i])) ** 2;
+  }
+  const sy = Math.sqrt(b / (I.length - 2));
+  const t = qt(p, I.length - 2);
+  return (x2, k2) => {
+    const Y4 = f(x2);
+    const se = sy * Math.sqrt(1 / I.length + (x2 - mean2) ** 2 / a2);
+    return Y4 + k2 * t * se;
+  };
+}
+
 // node_modules/@observablehq/plot/src/index.js
 Mark.prototype.plot = function({ marks: marks2 = [], ...options } = {}) {
   return plot({ ...options, marks: [...marks2, this] });
@@ -19484,7 +19708,153 @@ var invariant = (v, message) => {
   return v;
 };
 
+// src/google.ts
+var googleAPI = (token, baseURL) => async (method, endpoint, body) => {
+  const res = await fetch(`${baseURL}/${endpoint}`, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: body ? JSON.stringify(body) : null
+  });
+  console.log(`[${method}] ${baseURL}/${endpoint} ${res.status}`);
+  if (!res.ok) {
+    throw new Error(`Google API Error: ${await res.text()}`);
+  }
+  return res.json();
+};
+
+// src/data.ts
+var unpackValues = (prefix, r, cb) => {
+  const fieldNames = r.values[0];
+  for (let i = 0; i < r.values.length - 1; i++) {
+    let rowIdx = i + 1;
+    const row = r.values[rowIdx];
+    let restValues;
+    if (row.length > fieldNames.length) {
+      restValues = row.slice(fieldNames.length - 1);
+    }
+    const obj = fieldNames.reduce((o, fn, idx) => {
+      const isLast = idx === fieldNames.length - 1;
+      o[fn] = isLast && restValues ? restValues : row[idx];
+      return o;
+    }, {});
+    cb({ ...obj, number: rowIdx }, rowIdx);
+  }
+};
+var getMap = async (google2, name) => {
+  const oMap = /* @__PURE__ */ new Map();
+  switch (name) {
+    case "Inputs": {
+      const inputs2 = await google2(
+        "GET",
+        "values/Inputs?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE"
+      );
+      unpackValues("inputs", inputs2, (val, i) => {
+        oMap.set(i, val);
+      });
+      break;
+    }
+    case "Curves": {
+      const curves3 = await google2(
+        "GET",
+        "values/Curves?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE"
+      );
+      unpackValues("curves", curves3, (val, i) => {
+        oMap.set(i, val);
+      });
+      break;
+    }
+    case "Models": {
+      const models2 = await google2(
+        "GET",
+        "values/Models?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE"
+      );
+      unpackValues("models", models2, (val, i) => {
+        oMap.set(i, val);
+      });
+      break;
+    }
+  }
+  return oMap;
+};
+var models = /* @__PURE__ */ new Map();
+var inputs = /* @__PURE__ */ new Map();
+var curves2 = /* @__PURE__ */ new Map();
+var setInputData = (num, field2, value) => {
+  const i = invariant(inputs.get(num), `input ${num} not found`);
+  inputs.set(num, {
+    ...i,
+    [field2]: value
+  });
+};
+var derefInput = (id2) => {
+  const i = invariant(inputs.get(id2), `Missing input ref: ${id2}`);
+  return {
+    ...i,
+    curves: i.curves.map(
+      (c4) => invariant(curves2.get(c4), `Missing curve ref: ${c4}`)
+    )
+  };
+};
+var reloadRemoteData = async (token, sheetId) => {
+  const google2 = googleAPI(
+    token.access_token,
+    `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}`
+  );
+  [models, inputs, curves2] = await Promise.all([
+    getMap(google2, "Models"),
+    getMap(google2, "Inputs"),
+    getMap(google2, "Curves")
+  ]);
+  curves2.forEach((c4) => {
+    const extrapolatedCurve = [];
+    if (typeof c4.curve === "number") {
+      c4.curve = [c4.curve];
+    }
+    const increment = c4.curve.length / c4.period;
+    let ci = 0;
+    for (let i = 0; i < c4.period; i++) {
+      const curveIndex = Math.floor(ci);
+      extrapolatedCurve.push(c4.curve[curveIndex]);
+      ci += increment;
+    }
+    c4.curve = extrapolatedCurve;
+  });
+};
+var addRemoteState = async (state) => {
+  state.models = [];
+  models.forEach((m) => {
+    const model = {
+      ...m,
+      inputs: m.inputs.map((num) => derefInput(num))
+    };
+    if (state.chartInputs.model?.number === model.number) {
+      state.chartInputs.model = model;
+    }
+    state.models.push(model);
+  });
+  state.inputs = [];
+  inputs.forEach((i, num) => {
+    const input = derefInput(num);
+    if (state.showingInput?.number === i.number) {
+      state.showingInput = input;
+    }
+    state.inputs.push(input);
+  });
+  return state;
+};
+
 // src/views/ModelView.ts
+var getDatasetNumber = (el, name) => {
+  const v = invariant(el.dataset[name], `number from data-${name}`);
+  const n = parseInt(v);
+  if (isNaN(n)) {
+    throw new Error(`${v} is not a number`);
+  }
+  return n;
+};
 var ModelView = class extends View {
   static get id() {
     return "model";
@@ -19492,8 +19862,8 @@ var ModelView = class extends View {
   get id() {
     return ModelView.id;
   }
-  get modelGuid() {
-    return this.state.chartInputs.model.guid;
+  get modelNumber() {
+    return this.state.chartInputs.model.number;
   }
   mount() {
     const el = invariant(this.rootElement, "model root");
@@ -19502,7 +19872,7 @@ var ModelView = class extends View {
         el,
         "click",
         () => {
-          this.dispatchEvent({ ChooseInput: { guid: this.modelGuid } });
+          this.dispatchEvent({ ChooseInput: { number: this.modelNumber } });
         },
         ".add"
       ),
@@ -19510,11 +19880,11 @@ var ModelView = class extends View {
         el,
         "click",
         (_, d) => {
-          const inputGuid = invariant(d.dataset.guid, "guid");
+          const inputNumber = getDatasetNumber(d, "number");
           this.dispatchEvent({
             RemoveInput: {
-              inputGuid,
-              modelGuid: this.modelGuid
+              inputNumber,
+              modelNumber: this.modelNumber
             }
           });
         },
@@ -19524,8 +19894,8 @@ var ModelView = class extends View {
         el,
         "click",
         (_, d) => {
-          const guid = invariant(d.dataset.guid, "guid");
-          this.dispatchEvent({ ShowInput: { guid } });
+          const number6 = getDatasetNumber(d, "number");
+          this.dispatchEvent({ ShowInput: { number: number6 } });
         },
         ".edit"
       ),
@@ -19533,64 +19903,143 @@ var ModelView = class extends View {
         el,
         "click",
         (_, d) => {
-          const guid = invariant(d.dataset.guid, "guid");
-          this.dispatchEvent({ ToggleInputShowing: { guid } });
+          const number6 = getDatasetNumber(d, "number");
+          this.dispatchEvent({ ToggleInputShowing: { number: number6 } });
         },
         ".toggle, .collection .name"
       ),
       // this.eventListener("offset", "change", this.updateChartInputs.bind(this)),
-      this.eventListener("days", "change", this.updateChartInputs.bind(this)),
+      this.eventListener("days", "change", () => {
+        this.dispatchEvent({
+          UpdateChart: {
+            days: Number.parseInt(this.el("days").value)
+          }
+        });
+      }),
       this.eventListener(
         el,
         "change",
         (_, el2) => {
-          const guid = invariant(el2.dataset.guid, "guid");
+          const number6 = getDatasetNumber(el2, "number");
           const field2 = invariant(el2.dataset.field, "field");
           const value = parseFloat(el2.value);
-          this.dispatchEvent({ SetInputValue: { guid, value, field: field2 } });
+          this.dispatchEvent({ SetInputValue: { number: number6, value, field: field2 } });
         },
         ".input-field"
+      ),
+      this.eventListener(
+        el,
+        "click",
+        (_, el2) => {
+          const number6 = getDatasetNumber(el2, "number");
+          const hiddenInputs = this.state.chartInputs.hiddenInputs;
+          if (hiddenInputs.has(number6)) {
+            hiddenInputs.delete(number6);
+          } else {
+            hiddenInputs.add(number6);
+          }
+          this.dispatchEvent({
+            UpdateChart: {
+              hiddenInputs
+            }
+          });
+        },
+        ".toggle-input"
+      ),
+      this.eventListener(
+        "toggle-low",
+        "click",
+        this.showStack.bind(this, "low")
+      ),
+      this.eventListener(
+        "toggle-mid",
+        "click",
+        this.showStack.bind(this, "mid")
+      ),
+      this.eventListener(
+        "toggle-high",
+        "click",
+        this.showStack.bind(this, "high")
       )
     ];
   }
-  updateChartInputs() {
+  showStack(chart) {
     this.dispatchEvent({
       UpdateChart: {
-        days: Number.parseInt(this.el("days").value),
-        offset: 0
-        // offset: Number.parseInt(this.el<HTMLInputElement>("offset").value),
+        showingStacks: chart
       }
     });
   }
   // https://leebyron.com/streamgraph/
   getChart(container) {
-    const { data, profitLoss } = this.state.chart;
+    const profitLossSum = [];
+    this.state.charts.forEach(({ profitLoss, name }) => {
+      profitLoss.forEach((d, index2) => {
+        profitLossSum[index2] = profitLossSum[index2] || d;
+        profitLossSum[index2][name] = d.total;
+      });
+    });
+    const moneyFormat = (d) => this.mf.format(d);
     return plot({
       width: container.clientWidth,
       y: {
         grid: true,
         label: "\u2191 Revenue"
-        // transform: (d) => d / 1000,
-        // domain: [-1000, 3000],
       },
       x: {
         label: "Day \u2192"
       },
-      color: { legend: true, scheme: "pastel2" },
+      color: {
+        legend: true,
+        scheme: "pastel2"
+      },
       marks: [
         ruleY([0]),
-        areaY(data, {
+        areaY(
+          this.state.charts.find(
+            (c4) => c4.name === this.state.chartInputs.showingStacks
+          )?.data,
+          {
+            x: "day",
+            y: "revenue",
+            z: "input",
+            fill: "input"
+          }
+        ),
+        lineY(profitLossSum, {
           x: "day",
-          y: "revenue",
-          z: "input",
-          fill: "input",
-          tip: true
+          y: "mid",
+          stroke: "black",
+          fillOpacity: 0.8
         }),
-        lineY(profitLoss, {
+        linearRegressionY(profitLossSum, {
           x: "day",
-          y: "total",
-          tip: true
-        })
+          y: this.state.chartInputs.showingStacks,
+          stroke: "blue",
+          opacity: 0.3
+        }),
+        areaY(profitLossSum, {
+          x: "day",
+          y1: "low",
+          y2: "high",
+          z: "input",
+          fill: "black",
+          fillOpacity: 0.2
+        }),
+        tip(
+          profitLossSum,
+          pointer({
+            x: "day",
+            y: "mid",
+            y1: "low",
+            y2: "high",
+            tip: {
+              format: {
+                y: moneyFormat
+              }
+            }
+          })
+        )
       ]
     });
   }
@@ -19599,8 +20048,8 @@ var ModelView = class extends View {
   }
   renderInputValues(element, input) {
     [
-      "avgSize",
-      "avgFreq",
+      "size",
+      "frequency",
       "growthPercent",
       "growthFreq",
       "saturation",
@@ -19609,8 +20058,26 @@ var ModelView = class extends View {
     ].forEach((field2) => {
       const value = input[field2];
       this.setAttrs(element, { value }, `.${field2}`);
-      this.setData(element, { guid: input.guid, field: field2 }, `.${field2}`);
+      this.setData(
+        element,
+        { number: input.number.toString(), field: field2 },
+        `.${field2}`
+      );
     });
+    const selectedCurves = new Set(input.curves.map((c4) => c4.number));
+    this.setContent(
+      element,
+      Array.from(curves2.entries()).map(([num, curve]) => {
+        const opt = document.createElement("option");
+        opt.value = `${num}`;
+        if (selectedCurves.has(num)) {
+          this.setAttrs(opt, { selected: "selected" });
+        }
+        this.setContent(opt, curve.name);
+        return opt;
+      }),
+      ".curves"
+    );
   }
   updated() {
     this.setContent("chart", this.getChart(this.el("chart")));
@@ -19622,19 +20089,25 @@ var ModelView = class extends View {
       model.inputs.map((i) => {
         const cEl = this.template("collection-row");
         this.setContent(cEl, i.name, ".name");
-        this.setData(cEl, { guid: i.guid }, ".name");
-        this.setData(cEl, { guid: i.guid }, ".delete");
-        this.setData(cEl, { guid: i.guid }, ".edit");
-        this.setData(cEl, { guid: i.guid }, ".toggle");
-        const showItems = this.state.openInputs.has(i.guid);
-        const toggleIcon = document.createElement("i");
-        toggleIcon.dataset.feather = showItems ? "chevron-down" : "chevron-right";
-        this.setContent(cEl, toggleIcon, ".toggle");
+        const number6 = i.number.toString();
+        this.setData(cEl, { number: number6 }, ".name");
+        this.setData(cEl, { number: number6 }, ".delete");
+        this.setData(cEl, { number: number6 }, ".edit");
+        this.setData(cEl, { number: number6 }, ".toggle");
+        const showItems = this.state.openInputs.has(i.number);
+        const openIcon = document.createElement("i");
+        openIcon.dataset.feather = showItems ? "chevron-down" : "chevron-right";
+        this.setContent(cEl, openIcon, ".toggle");
         this.findElement(cEl, ".items").classList.toggle("hidden", !showItems);
         if (showItems) {
-          console.log(i);
           this.renderInputValues(cEl, i);
         }
+        const toggleIcon = document.createElement("i");
+        this.setData(toggleIcon, {
+          feather: this.state.chartInputs.hiddenInputs.has(i.number) ? "eye-off" : "eye"
+        });
+        this.setData(cEl, { number: i.number.toString() }, ".toggle-input");
+        this.setContent(cEl, toggleIcon, ".toggle-input");
         return cEl;
       }),
       ".collection"
@@ -19644,16 +20117,30 @@ var ModelView = class extends View {
       min: `${this.state.chartInputs.offsetDay}`,
       value: `${this.state.chartInputs.days}`
     });
-    const mf = new Intl.NumberFormat("en-US", {
+    ["low", "mid", "high"].forEach((_n) => {
+      const n = _n;
+      const chart = this.state.charts.find((c4) => c4.name === n);
+      if (!chart) {
+        console.error("chart", n, "not found");
+        return;
+      }
+      this.setContent(`profit-${n}`, this.mf.format(chart.profit));
+      this.setContent(`loss-${n}`, `(${this.mf.format(chart.loss)})`);
+      this.setContent(`net-${n}`, this.mf.format(chart.profit - chart.loss));
+      let toggleIcon = document.createElement("i");
+      if (this.state.chartInputs.showingStacks === n) {
+        this.setData(toggleIcon, {
+          feather: "eye"
+        });
+      }
+      this.setContent(`toggle-${n}`, toggleIcon, ".icon");
+    });
+  }
+  get mf() {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD"
     });
-    this.setContent("profit", mf.format(this.state.chart.profit));
-    this.setContent("loss", `(${mf.format(this.state.chart.loss)})`);
-    this.setContent(
-      "net",
-      mf.format(this.state.chart.profit - this.state.chart.loss)
-    );
   }
 };
 
@@ -19671,7 +20158,9 @@ var ModelListView = class extends View {
         this.rootElement,
         "click",
         (_, el) => {
-          this.dispatchEvent({ ShowModel: { guid: el.dataset.guid } });
+          this.dispatchEvent({
+            ShowModel: { number: parseInt(el.dataset.number) }
+          });
         },
         ".button"
       )
@@ -19689,7 +20178,7 @@ var ModelListView = class extends View {
         const mEl = this.template("list-item");
         this.setContent(mEl, m.name, ".name");
         this.setAttrs(mEl, { title: m.name }, ".button");
-        this.setData(mEl, { guid: m.guid }, ".button");
+        this.setData(mEl, { number: m.number.toString() }, ".button");
         return mEl;
       }),
       ".list"
@@ -19774,7 +20263,9 @@ var QuickSearch = class extends View {
         "click",
         (_, e) => {
           const eventName = `Choose${this.state.quickSearch}`;
-          this.dispatchEvent({ [eventName]: { guid: e.dataset.guid } });
+          this.dispatchEvent({
+            [eventName]: { number: parseInt(e.dataset.number) }
+          });
         },
         ".result"
       ),
@@ -19783,7 +20274,7 @@ var QuickSearch = class extends View {
         this.dispatchEvent({
           [eventName]: {
             name: this.input.value,
-            guid: this.state.quickSearchGuid
+            number: this.state.quickSearchNumber
           }
         });
       })
@@ -19804,133 +20295,6 @@ var QuickSearch = class extends View {
       })
     );
   }
-};
-
-// src/google.ts
-var googleAPI = (token, baseURL) => async (method, endpoint, body) => {
-  const res = await fetch(`${baseURL}/${endpoint}`, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    },
-    body: body ? JSON.stringify(body) : null
-  });
-  console.log(`[${method}] ${baseURL}/${endpoint} ${res.status}`);
-  if (!res.ok) {
-    throw new Error(`Google API Error: ${await res.text()}`);
-  }
-  return res.json();
-};
-
-// src/data.ts
-var unpackValues = (prefix, r, cb) => {
-  const fieldNames = r.values[0];
-  for (let i = 0; i < r.values.length - 1; i++) {
-    let rowIdx = i + 1;
-    const guid = `${prefix}-${rowIdx}`;
-    const row = r.values[rowIdx];
-    let restValues;
-    if (row.length > fieldNames.length) {
-      restValues = row.slice(fieldNames.length - 1);
-    }
-    const obj = fieldNames.reduce((o, fn, idx) => {
-      const isLast = idx === fieldNames.length - 1;
-      o[fn] = isLast && restValues ? restValues : row[idx];
-      return o;
-    }, {});
-    cb({ ...obj, guid }, rowIdx);
-  }
-};
-var getMap = async (google2, name) => {
-  const oMap = /* @__PURE__ */ new Map();
-  switch (name) {
-    case "Inputs": {
-      const inputs2 = await google2(
-        "GET",
-        "values/Inputs?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE"
-      );
-      unpackValues("inputs", inputs2, (val, i) => {
-        oMap.set(i, val);
-      });
-      break;
-    }
-    case "Curves": {
-      const curves3 = await google2(
-        "GET",
-        "values/Curves?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE"
-      );
-      unpackValues("curves", curves3, (val, i) => {
-        oMap.set(i, val);
-      });
-      break;
-    }
-    case "Models": {
-      const models2 = await google2(
-        "GET",
-        "values/Models?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE"
-      );
-      unpackValues("models", models2, (val, i) => {
-        oMap.set(i, val);
-      });
-      break;
-    }
-  }
-  return oMap;
-};
-var models = /* @__PURE__ */ new Map();
-var inputs = /* @__PURE__ */ new Map();
-var curves2 = /* @__PURE__ */ new Map();
-var setInputData = (guid, field2, value) => {
-  const num = invariant(
-    parseInt(guid.match(/inputs-(\d+)/)[1], 10),
-    `bad guid ${guid}`
-  );
-  const i = invariant(inputs.get(num), `input ${num} not found`);
-  inputs.set(num, {
-    ...i,
-    [field2]: value
-  });
-};
-var derefInput = (id2) => {
-  const i = invariant(inputs.get(id2), `Missing input ref: ${id2}`);
-  return {
-    ...i,
-    curve: invariant(curves2.get(i.curve), `Missing curve ref: ${i.curve}`)
-  };
-};
-var reloadRemoteData = async (token, sheetId) => {
-  const google2 = googleAPI(
-    token.access_token,
-    `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}`
-  );
-  [models, inputs, curves2] = await Promise.all([
-    getMap(google2, "Models"),
-    getMap(google2, "Inputs"),
-    getMap(google2, "Curves")
-  ]);
-};
-var addRemoteState = async (state) => {
-  state.models = [];
-  models.forEach((m) => {
-    const model = {
-      ...m,
-      inputs: m.inputs.map((num) => derefInput(num))
-    };
-    if (state.chartInputs.model?.guid === model.guid) {
-      state.chartInputs.model = model;
-    }
-    state.models.push(model);
-  });
-  state.inputs = [];
-  inputs.forEach((i, num) => {
-    const input = derefInput(num);
-    if (state.showingInput?.guid === i.guid) {
-      state.showingInput = input;
-    }
-    state.inputs.push(input);
-  });
-  return state;
 };
 
 // node_modules/jwt-decode/build/esm/index.js
@@ -20079,7 +20443,7 @@ var InputView = class extends View {
   }
   mount() {
     const el = invariant(this.rootElement, "input root");
-    const guid = this.input.guid;
+    const number6 = this.input.number;
     return [];
   }
   showing(state) {
@@ -20104,8 +20468,8 @@ var defaultAccumulator = (currentCount) => ({
   isSaturated: false
 });
 var updateChart = (state) => {
-  const { model, days, offsetDay } = state.chartInputs;
-  if (model) {
+  const { model, days, offsetDay, hiddenInputs } = state.chartInputs;
+  const chartData = (name, model2, gMult) => {
     const data = [];
     const profitLoss = [];
     let acc = {};
@@ -20113,19 +20477,26 @@ var updateChart = (state) => {
     let loss = 0;
     for (let day = offsetDay + 1; day <= days; day++) {
       let dayRevenue = 0;
-      model.inputs.forEach((i) => {
+      model2.inputs.forEach((i) => {
+        if (hiddenInputs.has(i.number)) {
+          return;
+        }
         const dailyGrowth = i.growthFreq ? i.growthPercent / i.growthFreq : 0;
-        if (!acc[i.guid]) {
-          acc[i.guid] = defaultAccumulator(i.seed);
+        if (!acc[i.number]) {
+          acc[i.number] = defaultAccumulator(i.seed);
         }
-        if (!acc[i.guid].isSaturated) {
-          acc[i.guid].currentCount = acc[i.guid].currentCount + acc[i.guid].currentCount * dailyGrowth;
+        if (!acc[i.number].isSaturated) {
+          acc[i.number].currentCount = acc[i.number].currentCount + acc[i.number].currentCount * dailyGrowth;
         }
-        const count2 = Math.round(acc[i.guid].currentCount);
+        let count2 = Math.round(acc[i.number].currentCount);
         if (count2 >= i.saturation) {
-          acc[i.guid].isSaturated = true;
+          acc[i.number].isSaturated = true;
         }
-        const revenue = count2 / i.avgFreq * i.avgSize;
+        i.curves.forEach((c4) => {
+          count2 = count2 * c4.curve[day % c4.period];
+        });
+        count2 = count2 + count2 * (i.variability * gMult);
+        const revenue = count2 / i.frequency * i.size;
         dayRevenue += revenue;
         if (revenue >= 0) {
           profit += revenue;
@@ -20141,12 +20512,20 @@ var updateChart = (state) => {
       });
       profitLoss.push({ day, total: dayRevenue });
     }
-    state.chart = {
+    return {
+      name,
       data,
       profitLoss,
       profit,
       loss
     };
+  };
+  if (model) {
+    state.charts = [
+      chartData("high", model, 1),
+      chartData("mid", model, 0),
+      chartData("low", model, -1)
+    ];
   }
   return state;
 };
@@ -20158,8 +20537,13 @@ window.addEventListener("load", async () => {
     inputs: [],
     openInputs: /* @__PURE__ */ new Set(),
     showingScreen: "Models",
-    chartInputs: { days: 90, offsetDay: 0 },
-    chart: { data: [], profitLoss: [], profit: 0, loss: 0 }
+    chartInputs: {
+      showingStacks: "mid",
+      days: 30,
+      offsetDay: 0,
+      hiddenInputs: /* @__PURE__ */ new Set()
+    },
+    charts: []
   };
   const upd8 = initUI(state, async (event) => {
     await matchEnum(event, async (ev, value) => {
@@ -20186,7 +20570,7 @@ window.addEventListener("load", async () => {
           break;
         }
         case "ShowModel": {
-          const model = state.models.find((m) => m.guid === value.guid);
+          const model = state.models.find((m) => m.number === value.number);
           if (model) {
             state.chartInputs.model = model;
             updateChart(state);
@@ -20195,27 +20579,27 @@ window.addEventListener("load", async () => {
           break;
         }
         case "ToggleInputShowing": {
-          if (state.openInputs.has(value.guid)) {
-            state.openInputs.delete(value.guid);
+          if (state.openInputs.has(value.number)) {
+            state.openInputs.delete(value.number);
           } else {
-            state.openInputs.add(value.guid);
+            state.openInputs.add(value.number);
           }
           break;
         }
         case "SetInputValue": {
-          setInputData(value.guid, value.field, value.value);
+          setInputData(value.number, value.field, value.value);
           addRemoteState(state);
           updateChart(state);
           break;
         }
         case "ChooseInput": {
           state.quickSearch = "Input";
-          state.quickSearchGuid = value.guid;
+          state.quickSearchNumber = value.number;
           break;
         }
         case "CancelSearch": {
           state.quickSearch = void 0;
-          state.quickSearchGuid = void 0;
+          state.quickSearchNumber = void 0;
           break;
         }
         case "CreateInput": {
@@ -20224,8 +20608,18 @@ window.addEventListener("load", async () => {
           break;
         }
         case "UpdateChart": {
-          state.chartInputs.days = value.days;
-          state.chartInputs.offsetDay = value.offset;
+          if (value.days) {
+            state.chartInputs.days = value.days;
+          }
+          if (value.offsetDay) {
+            state.chartInputs.offsetDay = value.offsetDay;
+          }
+          if (value.hiddenInputs) {
+            state.chartInputs.hiddenInputs = value.hiddenInputs;
+          }
+          if (value.showingStacks) {
+            state.chartInputs.showingStacks = value.showingStacks;
+          }
           updateChart(state);
         }
       }

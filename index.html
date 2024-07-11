@@ -85,17 +85,37 @@
     <div class="flex gap-2">
       
     </div>
-    <div class="grid grid-cols-2">
+    <div class="grid grid-cols-4 gap-2">
       days: <input
+        class="col-span-3"
         id="days"
         type="number"
         value="0" />
+      <span></span>
+      <button id="toggle-low" class="flex gap-2 text-red-600">
+        <span class="icon"></span>
+        low
+      </button>
+      <button id="toggle-mid" class="flex gap-2 text-black">
+        <span class="icon"></span>
+        mid
+      </button>
+      <button id="toggle-high" class="flex gap-2 text-green-600">
+        <span class="icon"></span>
+        high
+      </button>
       profit:
-      <span id="profit"></span>
+      <span id="profit-low"></span>
+      <span id="profit-mid"></span>
+      <span id="profit-high"></span>
       loss:
-      <span id="loss"></span>
+      <span id="loss-low"></span>
+      <span id="loss-mid"></span>
+      <span id="loss-high"></span>
       net:
-      <span id="net"></span>
+      <span id="net-low"></span>
+      <span id="net-mid"></span>
+      <span id="net-high"></span>
     </div>
   </div>
 
@@ -110,7 +130,8 @@
   </div>
   <ul class="collection flex flex-col gap-2">
     <li data-template="collection-row" class="flex flex-col border-b last:border-b-0">
-      <div class="group px-4 py-2 flex justify-between">
+      <div class="group px-4 py-2 flex justify-between gap-2">
+        <button class="toggle-input"></button>
         <div class="name flex-1">Loading...</div>
         <div class="buttons hidden group-hover:flex gap-4">
           <button class="delete" title="delete">
@@ -129,14 +150,14 @@
           <div class="flex gap-4 flex-wrap">
   <label>
     size: <input
-      class="avgSize input-field"
-      data-field="avgSize"
+      class="size input-field"
+      data-field="size"
       type="number" />
   </label>
   <label>
     frequency: <input
-      class="avgFreq input-field"
-      data-field="avgFreq"
+      class="frequency input-field"
+      data-field="frequency"
       type="number" />
   </label>
   <label>
@@ -170,10 +191,11 @@
       type="number" />
   </label>
   <label>
-    curve:
+    curves:
     <select
-      class="curve input-field"
-      data-field="curve"
+      multiple="true"
+      class="curves input-field"
+      data-field="curves"
       type="select"></select>
   </label>
 </div>
@@ -188,7 +210,6 @@
 </div>
 
   </div>
-  TODO delete button
 </div>
 
 <div id="input" class="w-full hidden">
