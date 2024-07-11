@@ -88,7 +88,48 @@ export class ModelView extends View {
         },
         ".input-field"
       ),
+      this.eventListener(
+        el,
+        "click",
+        (_, el) => {
+          const number = getDatasetNumber(el, "number");
+          const hiddenInputs = this.state.chartInputs.hiddenInputs;
+          if (hiddenInputs.has(number)) {
+            hiddenInputs.delete(number);
+          } else {
+            hiddenInputs.add(number);
+          }
+          this.dispatchEvent({
+            UpdateChart: {
+              hiddenInputs,
+            },
+          });
+        },
+        ".toggle-input"
+      ),
+      this.eventListener(
+        "toggle-low",
+        "click",
+        this.showStack.bind(this, "low")
+      ),
+      this.eventListener(
+        "toggle-mid",
+        "click",
+        this.showStack.bind(this, "mid")
+      ),
+      this.eventListener(
+        "toggle-high",
+        "click",
+        this.showStack.bind(this, "high")
+      ),
     ];
+  }
+  showStack(chart: "low" | "mid" | "high") {
+    this.dispatchEvent({
+      UpdateChart: {
+        showingStacks: chart,
+      },
+    });
   }
 
   // https://leebyron.com/streamgraph/
@@ -99,7 +140,7 @@ export class ModelView extends View {
     const profitLossSum: Record<string, number>[] = [];
     this.state.charts.forEach(({ data, profitLoss, name }) => {
       profitLoss.forEach((d, index) => {
-        tipData[index] = tipData[index] || { day: d.day };
+        tipData[index] = tipData[index] || d;
         tipData[index][name] = d.total;
       });
       profitLoss.forEach((d, index) => {
@@ -110,23 +151,6 @@ export class ModelView extends View {
         dataSum[index] = dataSum[index] || d;
         dataSum[index][name] = d.revenue;
       });
-      chartMarks.push(
-        Plot.lineY(profitLoss, {
-          x: "day",
-          y: "total",
-          stroke: () => {
-            switch (name) {
-              case "mid":
-                return "black";
-              case "high":
-                return "green";
-              case "low":
-                return "red";
-            }
-          },
-          fillOpacity: 0.8,
-        })
-      );
     });
     const moneyFormat = (d: number) => this.mf.format(d);
     return Plot.plot({
@@ -146,22 +170,36 @@ export class ModelView extends View {
         Plot.ruleY([0]),
         Plot.areaY(dataSum, {
           x: "day",
-          y: "revenue",
+          y: this.state.chartInputs.showingStacks,
           z: "input",
           fill: "input",
+        }),
+        Plot.lineY(profitLossSum, {
+          x: "day",
+          y: "mid",
+          stroke: "black",
           fillOpacity: 0.8,
         }),
-        ...chartMarks,
-        Plot.linearRegressionY(
-          this.state.charts.find((c) => c.name === "mid")?.profitLoss,
-          { x: "day", y: "total", stroke: "blue" }
-        ),
+        Plot.areaY(profitLossSum, {
+          x: "day",
+          y1: "low",
+          y2: "high",
+          z: "input",
+          fill: "black",
+          fillOpacity: 0.2,
+        }),
+        Plot.linearRegressionY(dataSum, {
+          x: "day",
+          y: this.state.chartInputs.showingStacks,
+          stroke: "blue",
+          opacity: 0.3,
+        }),
         Plot.tip(
           tipData,
           Plot.pointer({
             x: "day",
-            y: "low",
-            y1: "mid",
+            y: "mid",
+            y1: "low",
             y2: "high",
             tip: {
               format: {
@@ -232,16 +270,21 @@ export class ModelView extends View {
         this.setData(cEl, { number }, ".edit");
         this.setData(cEl, { number }, ".toggle");
         const showItems = this.state.openInputs.has(i.number);
-        const toggleIcon = document.createElement("i");
-        toggleIcon.dataset.feather = showItems
-          ? "chevron-down"
-          : "chevron-right";
-        this.setContent(cEl, toggleIcon, ".toggle");
+        const openIcon = document.createElement("i");
+        openIcon.dataset.feather = showItems ? "chevron-down" : "chevron-right";
+        this.setContent(cEl, openIcon, ".toggle");
         this.findElement(cEl, ".items").classList.toggle("hidden", !showItems);
         if (showItems) {
-          console.log(i);
           this.renderInputValues(cEl, i);
         }
+        const toggleIcon = document.createElement("i");
+        this.setData(toggleIcon, {
+          feather: this.state.chartInputs.hiddenInputs.has(i.number)
+            ? "eye-off"
+            : "eye",
+        });
+        this.setData(cEl, { number: i.number.toString() }, ".toggle-input");
+        this.setContent(cEl, toggleIcon, ".toggle-input");
         return cEl;
       }),
       ".collection"
@@ -252,7 +295,8 @@ export class ModelView extends View {
       min: `${this.state.chartInputs.offsetDay}`,
       value: `${this.state.chartInputs.days}`,
     });
-    ["low", "mid", "high"].forEach((n) => {
+    ["low", "mid", "high"].forEach((_n) => {
+      const n = _n as "high" | "low" | "mid";
       const chart = this.state.charts.find((c) => c.name === n);
       if (!chart) {
         console.error("chart", n, "not found");
@@ -261,6 +305,13 @@ export class ModelView extends View {
       this.setContent(`profit-${n}`, this.mf.format(chart.profit));
       this.setContent(`loss-${n}`, `(${this.mf.format(chart.loss)})`);
       this.setContent(`net-${n}`, this.mf.format(chart.profit - chart.loss));
+      let toggleIcon = document.createElement("i");
+      if (this.state.chartInputs.showingStacks === n) {
+        this.setData(toggleIcon, {
+          feather: "eye",
+        });
+      }
+      this.setContent(`toggle-${n}`, toggleIcon, ".icon");
     });
   }
 

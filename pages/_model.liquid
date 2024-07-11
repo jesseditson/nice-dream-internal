@@ -18,9 +18,18 @@
         type="number"
         value="0" />
       <span></span>
-      <span>low</span>
-      <span>mid</span>
-      <span>high</span>
+      <button id="toggle-low" class="flex gap-2 text-red-600">
+        <span class="icon"></span>
+        low
+      </button>
+      <button id="toggle-mid" class="flex gap-2 text-black">
+        <span class="icon"></span>
+        mid
+      </button>
+      <button id="toggle-high" class="flex gap-2 text-green-600">
+        <span class="icon"></span>
+        high
+      </button>
       profit:
       <span id="profit-low"></span>
       <span id="profit-mid"></span>
@@ -41,5 +50,4 @@
     {% include 'collection' title: "Inputs"
       , row_partial: "input-row" %}
   </div>
-  TODO delete button
 </div>

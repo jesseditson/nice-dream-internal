@@ -26,8 +26,8 @@ const defaultAccumulator = (currentCount: number): Accumulator => ({
   isSaturated: false,
 });
 const updateChart = (state: State): State => {
-  const { model, days, offsetDay } = state.chartInputs;
-  const addChart = (name: string, model: Model, gMult: number) => {
+  const { model, days, offsetDay, hiddenInputs } = state.chartInputs;
+  const chartData = (name: string, model: Model, gMult: number) => {
     const data: State["charts"][0]["data"] = [];
     const profitLoss: State["charts"][0]["profitLoss"] = [];
     let acc: Record<string, Accumulator> = {};
@@ -36,6 +36,9 @@ const updateChart = (state: State): State => {
     for (let day = offsetDay + 1; day <= days; day++) {
       let dayRevenue = 0;
       model.inputs.forEach((i) => {
+        if (hiddenInputs.has(i.number)) {
+          return;
+        }
         const dailyGrowth = i.growthFreq ? i.growthPercent / i.growthFreq : 0;
         if (!acc[i.number]) {
           acc[i.number] = defaultAccumulator(i.seed);
@@ -69,19 +72,20 @@ const updateChart = (state: State): State => {
       });
       profitLoss.push({ day, total: dayRevenue });
     }
-    state.charts.push({
+    return {
       name,
       data,
       profitLoss,
       profit,
       loss,
-    });
+    };
   };
   if (model) {
-    state.charts = [];
-    state.chartInputs.showingCharts.forEach((v) => {
-      addChart(v, model, v === "high" ? 1 : v === "low" ? -1 : 0);
-    });
+    state.charts = [
+      chartData("high", model, 1),
+      chartData("mid", model, 0),
+      chartData("low", model, -1),
+    ];
   }
   return state;
 };
@@ -95,8 +99,8 @@ window.addEventListener("load", async () => {
     openInputs: new Set(),
     showingScreen: "Models",
     chartInputs: {
-      showingCharts: new Set(["high", "low", "mid"]),
-      days: 90,
+      showingStacks: "mid",
+      days: 30,
       offsetDay: 0,
       hiddenInputs: new Set(),
     },
@@ -176,8 +180,8 @@ window.addEventListener("load", async () => {
           if (value.hiddenInputs) {
             state.chartInputs.hiddenInputs = value.hiddenInputs;
           }
-          if (value.showingCharts) {
-            state.chartInputs.showingCharts = value.showingCharts;
+          if (value.showingStacks) {
+            state.chartInputs.showingStacks = value.showingStacks;
           }
           updateChart(state);
         }
