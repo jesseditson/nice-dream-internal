@@ -34,6 +34,8 @@ export type State = {
   chartInputs: {
     days: number;
     offsetDay: number;
+    showingCharts: Set<"high" | "mid" | "low">;
+    hiddenInputs: Set<number>;
     model?: Model;
   };
   openInputs: Set<number>;

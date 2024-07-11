@@ -70,7 +70,13 @@ export class ModelView extends View {
         ".toggle, .collection .name"
       ),
       // this.eventListener("offset", "change", this.updateChartInputs.bind(this)),
-      this.eventListener("days", "change", this.updateChartInputs.bind(this)),
+      this.eventListener("days", "change", () => {
+        this.dispatchEvent({
+          UpdateChart: {
+            days: Number.parseInt(this.el<HTMLInputElement>("days").value),
+          },
+        });
+      }),
       this.eventListener(
         el,
         "change",
@@ -85,50 +91,86 @@ export class ModelView extends View {
     ];
   }
 
-  updateChartInputs() {
-    this.dispatchEvent({
-      UpdateChart: {
-        days: Number.parseInt(this.el<HTMLInputElement>("days").value),
-        offset: 0,
-        // offset: Number.parseInt(this.el<HTMLInputElement>("offset").value),
-      },
-    });
-  }
-
   // https://leebyron.com/streamgraph/
   getChart(container: HTMLElement) {
+    const tipData: Record<string, number>[] = [];
     const chartMarks: Plot.Markish[] = [];
+    const dataSum: Record<string, number>[] = [];
+    const profitLossSum: Record<string, number>[] = [];
     this.state.charts.forEach(({ data, profitLoss, name }) => {
+      profitLoss.forEach((d, index) => {
+        tipData[index] = tipData[index] || { day: d.day };
+        tipData[index][name] = d.total;
+      });
+      profitLoss.forEach((d, index) => {
+        profitLossSum[index] = profitLossSum[index] || d;
+        profitLossSum[index][name] = d.total;
+      });
+      data.forEach((d, index) => {
+        dataSum[index] = dataSum[index] || d;
+        dataSum[index][name] = d.revenue;
+      });
       chartMarks.push(
-        Plot.areaY(data, {
-          x: "day",
-          y: "revenue",
-          z: "input",
-          fill: "input",
-          tip: name === "mid",
-          fillOpacity: 0.8,
-        }),
         Plot.lineY(profitLoss, {
           x: "day",
           y: "total",
-          tip: true,
-          stroke: () => name,
+          stroke: () => {
+            switch (name) {
+              case "mid":
+                return "black";
+              case "high":
+                return "green";
+              case "low":
+                return "red";
+            }
+          },
+          fillOpacity: 0.8,
         })
       );
     });
+    const moneyFormat = (d: number) => this.mf.format(d);
     return Plot.plot({
       width: container.clientWidth,
       y: {
         grid: true,
         label: "↑ Revenue",
-        // transform: (d) => d / 1000,
-        // domain: [-1000, 3000],
       },
       x: {
         label: "Day →",
       },
-      color: { legend: true, scheme: "pastel2" },
-      marks: [Plot.ruleY([0]), ...chartMarks],
+      color: {
+        legend: true,
+        scheme: "pastel2",
+      },
+      marks: [
+        Plot.ruleY([0]),
+        Plot.areaY(dataSum, {
+          x: "day",
+          y: "revenue",
+          z: "input",
+          fill: "input",
+          fillOpacity: 0.8,
+        }),
+        ...chartMarks,
+        Plot.linearRegressionY(
+          this.state.charts.find((c) => c.name === "mid")?.profitLoss,
+          { x: "day", y: "total", stroke: "blue" }
+        ),
+        Plot.tip(
+          tipData,
+          Plot.pointer({
+            x: "day",
+            y: "low",
+            y1: "mid",
+            y2: "high",
+            tip: {
+              format: {
+                y: moneyFormat,
+              },
+            },
+          })
+        ),
+      ],
     });
   }
 
@@ -210,19 +252,22 @@ export class ModelView extends View {
       min: `${this.state.chartInputs.offsetDay}`,
       value: `${this.state.chartInputs.days}`,
     });
-    const mf = new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    });
     ["low", "mid", "high"].forEach((n) => {
       const chart = this.state.charts.find((c) => c.name === n);
       if (!chart) {
         console.error("chart", n, "not found");
         return;
       }
-      this.setContent(`profit-${n}`, mf.format(chart.profit));
-      this.setContent(`loss-${n}`, `(${mf.format(chart.loss)})`);
-      this.setContent(`net-${n}`, mf.format(chart.profit - chart.loss));
+      this.setContent(`profit-${n}`, this.mf.format(chart.profit));
+      this.setContent(`loss-${n}`, `(${this.mf.format(chart.loss)})`);
+      this.setContent(`net-${n}`, this.mf.format(chart.profit - chart.loss));
+    });
+  }
+
+  get mf() {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
     });
   }
 }

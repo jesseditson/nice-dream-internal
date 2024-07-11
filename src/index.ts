@@ -52,7 +52,7 @@ const updateChart = (state: State): State => {
         i.curves.forEach((c) => {
           count = count * c.curve[day % c.period];
         });
-        count = count * ((i.variability + 1) * gMult);
+        count = count + count * (i.variability * gMult);
         const revenue = (count / i.frequency) * i.size;
         dayRevenue += revenue;
         if (revenue >= 0) {
@@ -78,9 +78,10 @@ const updateChart = (state: State): State => {
     });
   };
   if (model) {
-    addChart("high", model, 2);
-    addChart("mid", model, 1);
-    addChart("low", model, 0);
+    state.charts = [];
+    state.chartInputs.showingCharts.forEach((v) => {
+      addChart(v, model, v === "high" ? 1 : v === "low" ? -1 : 0);
+    });
   }
   return state;
 };
@@ -93,7 +94,12 @@ window.addEventListener("load", async () => {
     inputs: [],
     openInputs: new Set(),
     showingScreen: "Models",
-    chartInputs: { days: 90, offsetDay: 0 },
+    chartInputs: {
+      showingCharts: new Set(["high", "low", "mid"]),
+      days: 90,
+      offsetDay: 0,
+      hiddenInputs: new Set(),
+    },
     charts: [],
   };
 
@@ -161,8 +167,18 @@ window.addEventListener("load", async () => {
           break;
         }
         case "UpdateChart": {
-          state.chartInputs.days = value.days;
-          state.chartInputs.offsetDay = value.offset;
+          if (value.days) {
+            state.chartInputs.days = value.days;
+          }
+          if (value.offsetDay) {
+            state.chartInputs.offsetDay = value.offsetDay;
+          }
+          if (value.hiddenInputs) {
+            state.chartInputs.hiddenInputs = value.hiddenInputs;
+          }
+          if (value.showingCharts) {
+            state.chartInputs.showingCharts = value.showingCharts;
+          }
           updateChart(state);
         }
       }

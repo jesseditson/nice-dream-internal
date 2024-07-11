@@ -1,4 +1,4 @@
-import { Input } from "./state";
+import { Input, State } from "./state";
 
 export type NDEvent =
   | { SignedIn: { token: google.accounts.oauth2.TokenResponse } }
@@ -40,5 +40,5 @@ export type NDEvent =
       SetInputValue: { number: number; field: keyof Input; value: number };
     }
   | {
-      UpdateChart: { days: number; offset: number };
+      UpdateChart: Partial<Omit<State["chartInputs"], "model">>;
     };
