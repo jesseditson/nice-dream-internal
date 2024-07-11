@@ -134,22 +134,11 @@ export class ModelView extends View {
 
   // https://leebyron.com/streamgraph/
   getChart(container: HTMLElement) {
-    const tipData: Record<string, number>[] = [];
-    const chartMarks: Plot.Markish[] = [];
-    const dataSum: Record<string, number>[] = [];
     const profitLossSum: Record<string, number>[] = [];
-    this.state.charts.forEach(({ data, profitLoss, name }) => {
-      profitLoss.forEach((d, index) => {
-        tipData[index] = tipData[index] || d;
-        tipData[index][name] = d.total;
-      });
+    this.state.charts.forEach(({ profitLoss, name }) => {
       profitLoss.forEach((d, index) => {
         profitLossSum[index] = profitLossSum[index] || d;
         profitLossSum[index][name] = d.total;
-      });
-      data.forEach((d, index) => {
-        dataSum[index] = dataSum[index] || d;
-        dataSum[index][name] = d.revenue;
       });
     });
     const moneyFormat = (d: number) => this.mf.format(d);
@@ -168,17 +157,28 @@ export class ModelView extends View {
       },
       marks: [
         Plot.ruleY([0]),
-        Plot.areaY(dataSum, {
-          x: "day",
-          y: this.state.chartInputs.showingStacks,
-          z: "input",
-          fill: "input",
-        }),
+        Plot.areaY(
+          this.state.charts.find(
+            (c) => c.name === this.state.chartInputs.showingStacks
+          )?.data,
+          {
+            x: "day",
+            y: "revenue",
+            z: "input",
+            fill: "input",
+          }
+        ),
         Plot.lineY(profitLossSum, {
           x: "day",
           y: "mid",
           stroke: "black",
           fillOpacity: 0.8,
+        }),
+        Plot.linearRegressionY(profitLossSum, {
+          x: "day",
+          y: this.state.chartInputs.showingStacks,
+          stroke: "blue",
+          opacity: 0.3,
         }),
         Plot.areaY(profitLossSum, {
           x: "day",
@@ -188,14 +188,8 @@ export class ModelView extends View {
           fill: "black",
           fillOpacity: 0.2,
         }),
-        Plot.linearRegressionY(dataSum, {
-          x: "day",
-          y: this.state.chartInputs.showingStacks,
-          stroke: "blue",
-          opacity: 0.3,
-        }),
         Plot.tip(
-          tipData,
+          profitLossSum,
           Plot.pointer({
             x: "day",
             y: "mid",
