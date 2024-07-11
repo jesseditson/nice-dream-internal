@@ -86,9 +86,10 @@ export class ModelView extends View {
   }
 
   // https://leebyron.com/streamgraph/
-  getChart() {
+  getChart(container: HTMLElement) {
     const { data, profitLoss } = this.state.chart;
     return Plot.plot({
+      width: container.clientWidth,
       y: {
         grid: true,
         label: "↑ Revenue",
@@ -106,7 +107,6 @@ export class ModelView extends View {
           y: "revenue",
           z: "input",
           fill: "input",
-          // offset: "wiggle",
           tip: true,
         }),
         Plot.lineY(profitLoss, {
@@ -142,7 +142,7 @@ export class ModelView extends View {
   updated() {
     // Possible optimization
     // https://observablehq.com/@fil/plot-animate-a-bar-chart/2
-    this.setContent("chart", this.getChart());
+    this.setContent("chart", this.getChart(this.el("chart")));
 
     const model = invariant(this.state.chartInputs.model, "model");
     this.setContent("name", model.name);
