@@ -23,7 +23,7 @@ export class ModelView extends View {
         el,
         "click",
         () => {
-          this.dispatchEvent({ ChooseChannel: { guid: this.modelGuid } });
+          this.dispatchEvent({ ChooseInput: { guid: this.modelGuid } });
         },
         ".add"
       ),
@@ -31,10 +31,10 @@ export class ModelView extends View {
         el,
         "click",
         (_, d) => {
-          const channelGuid = invariant(d.dataset.guid, "guid");
+          const inputGuid = invariant(d.dataset.guid, "guid");
           this.dispatchEvent({
-            RemoveChannel: {
-              channelGuid,
+            RemoveInput: {
+              inputGuid,
               modelGuid: this.modelGuid,
             },
           });
@@ -46,18 +46,9 @@ export class ModelView extends View {
         "click",
         (_, d) => {
           const guid = invariant(d.dataset.guid, "guid");
-          this.dispatchEvent({ ShowChannel: { guid } });
+          this.dispatchEvent({ ShowInput: { guid } });
         },
         ".edit"
-      ),
-      this.eventListener(
-        el,
-        "click",
-        (_, d) => {
-          const guid = invariant(d.dataset.guid, "guid");
-          this.dispatchEvent({ ToggleChannelExpanded: { guid } });
-        },
-        ".toggle"
       ),
       this.eventListener("offset", "change", this.updateChartInputs.bind(this)),
       this.eventListener("days", "change", this.updateChartInputs.bind(this)),
@@ -94,10 +85,11 @@ export class ModelView extends View {
           x: "day",
           y: "revenue",
           z: "input",
-          fill: this.state.expandedChannels.size ? "input" : "channel",
+          fill: "input",
           offset: "wiggle",
         }),
         Plot.lineY(profitLoss, {
+          x: "day",
           y: "total",
           tip: true,
         }),
@@ -115,38 +107,39 @@ export class ModelView extends View {
     this.setContent("chart", this.getChart());
 
     const model = invariant(this.state.chartInputs.model, "model");
+    this.setContent("name", model.name);
     const channelCollection = this.template("collection");
     this.setContent(
       channelCollection,
-      model.channels.map((c) => {
+      model.inputs.map((i) => {
         const cEl = this.template("collection-row");
-        this.setContent(cEl, c.name, ".name");
-        this.setData(cEl, { guid: c.guid }, ".delete");
-        this.setData(cEl, { guid: c.guid }, ".edit");
-        this.setData(cEl, { guid: c.guid }, ".toggle");
-        const showItems = this.state.expandedChannels.has(c.guid);
-        this.findElement(cEl, ".items").classList.toggle("hidden", !showItems);
-        const toggleIcon = document.createElement("i");
-        toggleIcon.dataset.feather = showItems
-          ? "chevron-down"
-          : "chevron-right";
-        this.setContent(cEl, toggleIcon, ".toggle");
-        if (showItems) {
-          this.setContent(
-            cEl,
-            c.inputs.map((i) => {
-              const iEl = this.template("collection-item");
-              this.setContent(iEl, i.name, ".name");
-              return iEl;
-            }),
-            ".items"
-          );
-        }
+        this.setContent(cEl, i.name, ".name");
+        this.setData(cEl, { guid: i.guid }, ".delete");
+        this.setData(cEl, { guid: i.guid }, ".edit");
+        // this.setData(cEl, { guid: i.guid }, ".toggle");
+        this.findElement(cEl, ".toggle").classList.toggle("hidden", true);
+        this.findElement(cEl, ".items").classList.toggle("hidden", true);
+        // const toggleIcon = document.createElement("i");
+        // toggleIcon.dataset.feather = showItems
+        //   ? "chevron-down"
+        //   : "chevron-right";
+        // this.setContent(cEl, toggleIcon, ".toggle");
+        // if (showItems) {
+        //   this.setContent(
+        //     cEl,
+        //     c.inputs.map((i) => {
+        //       const iEl = this.template("collection-item");
+        //       this.setContent(iEl, i.name, ".name");
+        //       return iEl;
+        //     }),
+        //     ".items"
+        //   );
+        // }
         return cEl;
       }),
       ".collection"
     );
-    this.setContent("channels", channelCollection);
+    this.setContent("inputs", channelCollection);
     this.setAttrs("offset", { max: `${this.state.chartInputs.days}` });
     this.setAttrs("days", {
       min: `${this.state.chartInputs.offsetDay}`,

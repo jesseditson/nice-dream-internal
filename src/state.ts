@@ -39,7 +39,7 @@ export type State = {
   showingInput?: Input;
   quickSearch?: "Input";
   quickSearchGuid?: string;
-  showingScreen: "Models" | "Inputs" | "Model" | "Input" | "Channel";
+  showingScreen: "Models" | "Inputs" | "Model" | "Input";
   chart: {
     data: {
       day: number;
@@ -49,6 +49,6 @@ export type State = {
     }[];
     profit: number;
     loss: number;
-    profitLoss: { total: number }[];
+    profitLoss: { day: number; total: number }[];
   };
 };

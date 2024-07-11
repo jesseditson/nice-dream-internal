@@ -16,10 +16,8 @@ export class QuickSearch extends View {
   }
   get allResults() {
     switch (this.state.quickSearch) {
-      case "Channel":
-        return this.state.channels;
       case "Input":
-        return this.state.inputs;
+        return this.state.inputs.slice(0, 8);
     }
     return [];
   }
@@ -59,29 +57,17 @@ export class QuickSearch extends View {
         root,
         "click",
         (_, e) => {
-          const eventName = `Choose${this.state.quickSearch}` as
-            | "ChooseChannel"
-            | "ChooseInput";
-          // @ts-expect-error too fancy
+          const eventName = `Choose${this.state.quickSearch}` as "ChooseInput";
           this.dispatchEvent({ [eventName]: { guid: e.dataset.guid! } });
         },
         ".result"
       ),
       this.eventListener("create-result", "click", () => {
-        const eventName = `Create${this.state.quickSearch}` as
-          | "CreateChannel"
-          | "CreateInput";
-        console.log({
-          [eventName]: {
-            name: this.input.value!,
-            guid: this.state.quickSearchGuid,
-          },
-        });
-        // @ts-expect-error too fancy
+        const eventName = `Create${this.state.quickSearch}` as "CreateInput";
         this.dispatchEvent({
           [eventName]: {
             name: this.input.value!,
-            guid: this.state.quickSearchGuid,
+            guid: this.state.quickSearchGuid!,
           },
         });
       }),

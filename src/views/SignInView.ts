@@ -1,6 +1,7 @@
 import { jwtDecode } from "jwt-decode";
 import { State } from "../state";
 import { View } from "./View";
+import { googleAPI } from "../google";
 
 // https://developers.google.com/identity/gsi/web/reference/js-reference#CredentialResponse
 type GoogleJWT = {
@@ -55,16 +56,25 @@ export class SignInView extends View {
     typeof google.accounts.oauth2.initTokenClient
   >;
 
-  maybeSignIn() {
+  async maybeSignIn() {
     const stored = localStorage.getItem("googleAuthCreds");
     const storedToken = localStorage.getItem("googleToken");
     if (storedToken) {
       // TODO: validate token
-      console.log(storedToken);
-      this.dispatchEvent({
-        SignedIn: { token: JSON.parse(storedToken) },
-      });
-      return;
+      const token = JSON.parse(storedToken);
+      try {
+        const r = await googleAPI(
+          token,
+          "https://www.googleapis.com/oauth2/v3/tokeninfo"
+        )("GET", `?access_token=${token.access_token}`);
+        console.log(r);
+        this.dispatchEvent({
+          SignedIn: { token },
+        });
+        return;
+      } catch (e) {
+        console.log("Token no longer valid");
+      }
     }
     if (stored && !googleAuthCreds.credential) {
       googleAuthCreds = JSON.parse(stored);
