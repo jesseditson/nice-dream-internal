@@ -33,7 +33,7 @@ const updateChart = (state: State): State => {
     let acc: Record<string, Accumulator> = {};
     let profit = 0;
     let loss = 0;
-    for (let day = offsetDay; day < days; day++) {
+    for (let day = offsetDay + 1; day <= days; day++) {
       let dayRevenue = 0;
       model.inputs.forEach((i) => {
         const dailyGrowth = i.growthFreq ? i.growthPercent / i.growthFreq : 0;
