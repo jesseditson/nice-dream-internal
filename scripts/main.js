@@ -19808,11 +19808,32 @@ var getAPI = (token, sheetId) => {
   );
   return {
     reloadRemoteData: reloadRemoteData.bind(null, google2),
-    removeInput: removeInput.bind(null, google2)
+    removeInput: removeInput.bind(null, google2),
+    addInput: addInput.bind(null, google2)
   };
 };
 var removeInput = (google2, modelNumber, inputNumber) => {
   return deleteCell(google2, "Models", modelNumber, inputNumber);
+};
+var addInput = (google2, modelNumber, inputNumber) => {
+  return addCell(google2, "Models", modelNumber, inputNumber);
+};
+var addCell = async (google2, sheet, row, value) => {
+  const rowNum = row + 1;
+  const vr = await google2(
+    "GET",
+    `values/${sheet}!${rowNum}:${rowNum}?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE`
+  );
+  const newCol = getCol(vr.values[0].length);
+  await google2(
+    "PUT",
+    `values/${sheet}!${newCol}${rowNum}?valueInputOption=RAW`,
+    {
+      range: `${sheet}!${newCol}${rowNum}`,
+      majorDimension: "ROWS",
+      values: [[value]]
+    }
+  );
 };
 var deleteCell = async (google2, sheet, row, cellMatch) => {
   const rowNum = row + 1;
@@ -20286,6 +20307,7 @@ var Nav = class extends View {
       "hidden",
       this.state.showingScreen === "Models"
     );
+    this.el("loader").classList.toggle("hidden", !this.state.loading);
   }
 };
 
@@ -20372,7 +20394,7 @@ var QuickSearch = class extends View {
       this.showingResults.map((r) => {
         const rEl = this.template("result");
         this.setContent(rEl, r.name, ".name");
-        this.setData(rEl, {});
+        this.setData(rEl, { number: r.number.toString() });
         return rEl;
       })
     );
@@ -20620,6 +20642,7 @@ var updateChart = (state) => {
 };
 window.addEventListener("load", async () => {
   const state = {
+    loading: true,
     googleToken: null,
     sheetId: "1ywvFgv4YQGTOPddovWhQ0D_B5URN2NAp7y4yMGoCtoA",
     models: [],
@@ -20636,13 +20659,19 @@ window.addEventListener("load", async () => {
   };
   const upd8 = initUI(state, async (event) => {
     const api = getAPI(state.googleToken, state.sheetId);
+    const setLoading = (loading) => {
+      state.loading = loading;
+      upd8(state);
+    };
     await matchEnum(event, async (ev, value) => {
       switch (ev) {
         case "SignedIn": {
+          setLoading(true);
           state.googleToken = value.token;
           await getAPI(state.googleToken, state.sheetId)?.reloadRemoteData();
           await addRemoteState(state);
           updateChart(state);
+          state.loading = false;
           break;
         }
         case "GoBack": {
@@ -20693,17 +20722,30 @@ window.addEventListener("load", async () => {
           break;
         }
         case "AddInput": {
+          state.quickSearch = void 0;
+          state.quickSearchNumber = void 0;
+          setLoading(true);
+          await api?.addInput(value.modelNumber, value.inputNumber);
+          await api?.reloadRemoteData();
+          addRemoteState(state);
+          updateChart(state);
+          state.loading = false;
           break;
         }
         case "RemoveInput": {
+          setLoading(true);
           await api?.removeInput(value.modelNumber, value.inputNumber);
           await api?.reloadRemoteData();
           addRemoteState(state);
+          updateChart(state);
+          state.loading = false;
           break;
         }
         case "CreateInput": {
+          setLoading(true);
           await api?.reloadRemoteData();
           addRemoteState(state);
+          state.loading = false;
           break;
         }
         case "UpdateChart": {
