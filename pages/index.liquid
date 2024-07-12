@@ -1,10 +1,15 @@
 {% layout 'theme' title: objects.site.name %}
 
-<h1 id="nav" class="text-3xl font-bold flex gap-4">
-  <button id="back" class="hidden">
-    <i data-feather="chevron-left"></i>
-  </button>
-  {{ objects.site.name }}
+<h1 id="nav" class="flex justify-between h-[50px]">
+  <div class="text-3xl font-bold flex gap-4">
+    <button id="back" class="hidden">
+      <i data-feather="chevron-left"></i>
+    </button>
+    {{ objects.site.name }}
+  </div>
+  <div id="loader">
+    <div></div>
+  </div>
 </h1>
 
 <div id="firebaseui-auth-container"></div>

@@ -92,6 +92,7 @@ const updateChart = (state: State): State => {
 
 window.addEventListener("load", async () => {
   const state: State = {
+    loading: true,
     googleToken: null,
     sheetId: "1ywvFgv4YQGTOPddovWhQ0D_B5URN2NAp7y4yMGoCtoA",
     models: [],
@@ -109,13 +110,19 @@ window.addEventListener("load", async () => {
 
   const upd8 = initUI(state, async (event) => {
     const api = getAPI(state.googleToken, state.sheetId);
+    const setLoading = (loading: boolean) => {
+      state.loading = loading;
+      upd8(state);
+    };
     await matchEnum(event, async (ev, value) => {
       switch (ev) {
         case "SignedIn": {
+          setLoading(true);
           state.googleToken = value.token;
           await getAPI(state.googleToken, state.sheetId)?.reloadRemoteData();
           await addRemoteState(state);
           updateChart(state);
+          state.loading = false;
           break;
         }
         case "GoBack": {
@@ -166,19 +173,31 @@ window.addEventListener("load", async () => {
           break;
         }
         case "AddInput": {
-          // TODO: add
+          state.quickSearch = undefined;
+          state.quickSearchNumber = undefined;
+          setLoading(true);
+          await api?.addInput(value.modelNumber, value.inputNumber);
+          await api?.reloadRemoteData();
+          addRemoteState(state);
+          updateChart(state);
+          state.loading = false;
           break;
         }
         case "RemoveInput": {
+          setLoading(true);
           await api?.removeInput(value.modelNumber, value.inputNumber);
           await api?.reloadRemoteData();
           addRemoteState(state);
+          updateChart(state);
+          state.loading = false;
           break;
         }
         case "CreateInput": {
+          setLoading(true);
           // TODO create
           await api?.reloadRemoteData();
           addRemoteState(state);
+          state.loading = false;
           break;
         }
         case "UpdateChart": {

@@ -92,7 +92,7 @@ export class QuickSearch extends View {
       this.showingResults.map((r) => {
         const rEl = this.template("result");
         this.setContent(rEl, r.name, ".name");
-        this.setData(rEl, {});
+        this.setData(rEl, { number: r.number.toString() });
         return rEl;
       })
     );

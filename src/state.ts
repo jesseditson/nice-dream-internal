@@ -27,6 +27,7 @@ export type Model<I = Input> = {
 };
 
 export type State = {
+  loading: boolean;
   googleToken: google.accounts.oauth2.TokenResponse | null;
   sheetId: string;
   models: Model[];

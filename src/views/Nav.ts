@@ -22,5 +22,6 @@ export class Nav extends View {
       "hidden",
       this.state.showingScreen === "Models"
     );
+    this.el("loader").classList.toggle("hidden", !this.state.loading);
   }
 }

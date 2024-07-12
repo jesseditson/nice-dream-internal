@@ -119,6 +119,7 @@ export const getAPI = (
   return {
     reloadRemoteData: reloadRemoteData.bind(null, google),
     removeInput: removeInput.bind(null, google),
+    addInput: addInput.bind(null, google),
   };
 };
 
@@ -128,6 +129,35 @@ const removeInput = (
   inputNumber: number
 ) => {
   return deleteCell(google, "Models", modelNumber, inputNumber);
+};
+const addInput = (google: Google, modelNumber: number, inputNumber: number) => {
+  return addCell(google, "Models", modelNumber, inputNumber);
+};
+
+const addCell = async (
+  google: Google,
+  sheet: string,
+  row: number,
+  value: string | number
+) => {
+  // NOTE: Can only delete values that are in rest params, other cells may be
+  // modified via an update.
+  const rowNum = row + 1;
+  // Fetch our row so we can append to its values
+  const vr = await google<ValuesResponse>(
+    "GET",
+    `values/${sheet}!${rowNum}:${rowNum}?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE`
+  );
+  const newCol = getCol(vr.values[0].length);
+  await google(
+    "PUT",
+    `values/${sheet}!${newCol}${rowNum}?valueInputOption=RAW`,
+    {
+      range: `${sheet}!${newCol}${rowNum}`,
+      majorDimension: "ROWS",
+      values: [[value]],
+    }
+  );
 };
 
 const deleteCell = async (
