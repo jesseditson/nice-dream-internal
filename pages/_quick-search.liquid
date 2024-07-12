@@ -3,13 +3,14 @@
     <h2 id="title" class="p-4 text-lg text-center font-bold text-gray-600"></h2>
     <input
       id="typeahead"
-      class="px-5 py-3 border-b-1"
+      class="px-5 py-3 border-gray-600 border-b-1"
       type="text"
       incremental="true"
+      autocomplete="off"
       autofocus="true"
       placeholder="Search..." />
     <ul id="results" class="flex flex-col gap-2">
-      <li data-template="result" class="result cursor-pointer border-b-1 flex justify-between p-4">
+      <li data-template="result" class="result cursor-pointer border-gray-600 border-b-1 flex justify-between p-4">
         <div class="name"></div>
         <button class="select">
           <i data-feather="chevron-right"></i>

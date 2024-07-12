@@ -16,8 +16,16 @@ export class QuickSearch extends View {
   }
   get allResults() {
     switch (this.state.quickSearch) {
-      case "Input":
-        return this.state.inputs.slice(0, 8);
+      case "Input": {
+        const existing = new Set(
+          this.state.chartInputs.model?.inputs.map((i) => i.number) || []
+        );
+        return this.state.inputs
+          .filter((i) => {
+            return !existing.has(i.number);
+          })
+          .slice(0, 8);
+      }
     }
     return [];
   }
@@ -27,7 +35,7 @@ export class QuickSearch extends View {
       return this.allResults;
     }
     return this.allResults.filter((i) => {
-      i.name.includes(this.input.value);
+      return i.name.toLowerCase().includes(this.input.value.toLowerCase());
     });
   }
 
@@ -45,21 +53,18 @@ export class QuickSearch extends View {
         }
       }),
       this.eventListener("typeahead", "input", () => {
-        if (this.input.value) {
-          this.setContent(
-            "create-result",
-            `Create new ${this.state.quickSearch} named ${this.input.value}`
-          );
-        }
-        this.el("create-result").classList.toggle("hidden", !this.input.value);
+        this.internalUpdate();
       }),
       this.eventListener(
         root,
         "click",
         (_, e) => {
-          const eventName = `Choose${this.state.quickSearch}` as "ChooseInput";
+          const eventName = `Add${this.state.quickSearch}` as "AddInput";
           this.dispatchEvent({
-            [eventName]: { number: parseInt(e.dataset.number!) },
+            [eventName]: {
+              inputNumber: parseInt(e.dataset.number!),
+              modelNumber: this.state.quickSearchNumber!,
+            },
           });
         },
         ".result"
@@ -91,5 +96,12 @@ export class QuickSearch extends View {
         return rEl;
       })
     );
+    if (this.input.value) {
+      this.setContent(
+        "create-result",
+        `Create new ${this.state.quickSearch} named ${this.input.value}`
+      );
+    }
+    this.el("create-result").classList.toggle("hidden", !this.input.value);
   }
 }

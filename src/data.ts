@@ -9,9 +9,9 @@ type ValuesResponse = {
   range: string;
   values: (string | number)[][];
 };
+type Google = ReturnType<typeof googleAPI>;
 
 const unpackValues = (
-  prefix: string,
   r: ValuesResponse,
   cb: (
     value: Record<string, string | number | (string | number)[]>,
@@ -40,7 +40,7 @@ const unpackValues = (
 };
 
 const getMap = async <T>(
-  google: ReturnType<typeof googleAPI>,
+  google: Google,
   name: SheetName
 ): Promise<Map<number, T>> => {
   const oMap: Map<number, T> = new Map();
@@ -50,7 +50,7 @@ const getMap = async <T>(
         "GET",
         "values/Inputs?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE"
       );
-      unpackValues("inputs", inputs, (val, i) => {
+      unpackValues(inputs, (val, i) => {
         oMap.set(i, val as T);
       });
       break;
@@ -60,7 +60,7 @@ const getMap = async <T>(
         "GET",
         "values/Curves?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE"
       );
-      unpackValues("curves", curves, (val, i) => {
+      unpackValues(curves, (val, i) => {
         oMap.set(i, val as T);
       });
       break;
@@ -70,7 +70,7 @@ const getMap = async <T>(
         "GET",
         "values/Models?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE"
       );
-      unpackValues("models", models, (val, i) => {
+      unpackValues(models, (val, i) => {
         oMap.set(i, val as T);
       });
       break;
@@ -105,19 +105,87 @@ export const derefInput = (id: number): State["inputs"][0] => {
   };
 };
 
-export const reloadRemoteData = async (
-  token: google.accounts.oauth2.TokenResponse,
+export const getAPI = (
+  token: google.accounts.oauth2.TokenResponse | null,
   sheetId: string
 ) => {
+  if (!token) {
+    return;
+  }
   const google = googleAPI(
     token.access_token,
     `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}`
   );
+  return {
+    reloadRemoteData: reloadRemoteData.bind(null, google),
+    removeInput: removeInput.bind(null, google),
+  };
+};
+
+const removeInput = (
+  google: Google,
+  modelNumber: number,
+  inputNumber: number
+) => {
+  return deleteCell(google, "Models", modelNumber, inputNumber);
+};
+
+const deleteCell = async (
+  google: Google,
+  sheet: string,
+  row: number,
+  cellMatch: string | number
+) => {
+  // NOTE: Can only delete values that are in rest params, other cells may be
+  // modified via an update.
+  const rowNum = row + 1;
+  // First fetch a header row so we can find out how many rows offset we begin
+  // our rest data
+  const hr = await google<ValuesResponse>(
+    "GET",
+    `values/${sheet}!1:1?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE`
+  );
+  const startCol = getCol(hr.values.length);
+  const vr = await google<ValuesResponse>(
+    "GET",
+    `values/${sheet}!${startCol}${rowNum}:${rowNum}?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE`
+  );
+  const newValues = vr.values[0].filter((v) => v !== cellMatch);
+  if (newValues.length === vr.values[0].length) {
+    throw new Error(`${cellMatch} not found in ${vr.values[0]}`);
+  }
+  // When deleting an item and shifting left, also push an empty value so we
+  // don't duplicate the rightmost item.
+  newValues.push("");
+  await google(
+    "PUT",
+    `values/${sheet}!${startCol}${rowNum}:${rowNum}?valueInputOption=RAW`,
+    {
+      range: `${sheet}!${startCol}${rowNum}:${rowNum}`,
+      majorDimension: "ROWS",
+      values: [newValues],
+    }
+  );
+};
+
+const reloadRemoteData = async (google: Google) => {
   [models, inputs, curves] = await Promise.all([
     getMap<Model<number>>(google, "Models"),
     getMap<Input<number>>(google, "Inputs"),
     getMap<Curve>(google, "Curves"),
   ]);
+  // Process models
+  models.forEach((m) => {
+    if (typeof m.inputs === "number") {
+      m.inputs = [m.inputs];
+    }
+  });
+  // Process inputs
+  inputs.forEach((i) => {
+    if (typeof i.curves === "number") {
+      i.curves = [i.curves];
+    }
+  });
   // Process curves
   curves.forEach((c) => {
     // Extrapolate the curve over the given period
@@ -157,4 +225,36 @@ export const addRemoteState = async (state: State): Promise<State> => {
     state.inputs.push(input);
   });
   return state;
+};
+
+const columns = [
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "I",
+  "J",
+  "K",
+  "L",
+  "M",
+  "N",
+  "O",
+  "P",
+  "Q",
+  "R",
+  "S",
+  "T",
+  "U",
+  "V",
+  "W",
+  "X",
+  "Y",
+  "Z",
+];
+const getCol = (number: number): string => {
+  return invariant(columns[number], `UNSUPPORTED INDEX ${number}`);
 };

@@ -7,7 +7,7 @@ import { ModelListView } from "./views/ModelListView";
 import { matchEnum } from "./utils";
 import { Nav } from "./views/Nav";
 import { QuickSearch } from "./views/QuickSearch";
-import { addRemoteState, reloadRemoteData, setInputData } from "./data";
+import { addRemoteState, getAPI, setInputData } from "./data";
 import { SignInView } from "./views/SignInView";
 import { InputView } from "./views/InputView";
 
@@ -108,11 +108,12 @@ window.addEventListener("load", async () => {
   };
 
   const upd8 = initUI(state, async (event) => {
+    const api = getAPI(state.googleToken, state.sheetId);
     await matchEnum(event, async (ev, value) => {
       switch (ev) {
         case "SignedIn": {
           state.googleToken = value.token;
-          await reloadRemoteData(state.googleToken, state.sheetId);
+          await getAPI(state.googleToken, state.sheetId)?.reloadRemoteData();
           await addRemoteState(state);
           updateChart(state);
           break;
@@ -164,9 +165,19 @@ window.addEventListener("load", async () => {
           state.quickSearchNumber = undefined;
           break;
         }
+        case "AddInput": {
+          // TODO: add
+          break;
+        }
+        case "RemoveInput": {
+          await api?.removeInput(value.modelNumber, value.inputNumber);
+          await api?.reloadRemoteData();
+          addRemoteState(state);
+          break;
+        }
         case "CreateInput": {
           // TODO create
-          await reloadRemoteData(state.googleToken!, state.sheetId);
+          await api?.reloadRemoteData();
           addRemoteState(state);
           break;
         }
