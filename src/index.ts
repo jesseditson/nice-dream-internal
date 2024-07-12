@@ -1,13 +1,13 @@
 import feather from "feather-icons";
 import { cre8 } from "upd8";
 import { NDEvent } from "./events";
-import { Model, State } from "./state";
+import { ChartData, Model, State } from "./state";
 import { ModelView } from "./views/ModelView";
 import { ModelListView } from "./views/ModelListView";
 import { matchEnum } from "./utils";
 import { Nav } from "./views/Nav";
 import { QuickSearch } from "./views/QuickSearch";
-import { addRemoteState, getAPI, setInputData } from "./data";
+import { addRemoteState, getAPI, inputs, setInputData } from "./data";
 import { SignInView } from "./views/SignInView";
 import { InputView } from "./views/InputView";
 
@@ -25,74 +25,91 @@ const defaultAccumulator = (currentCount: number): Accumulator => ({
   currentCount,
   isSaturated: false,
 });
+const getChartData = (
+  name: string,
+  model: Model,
+  gMult: number,
+  days?: number,
+  offsetDay?: number,
+  hiddenInputs?: Set<number>
+): ChartData => {
+  days = days || model.defaultDays;
+  offsetDay = offsetDay || model.defaultOffset;
+  hiddenInputs = hiddenInputs || new Set();
+  const data: State["showingCharts"][0]["data"] = [];
+  const profitLoss: State["showingCharts"][0]["profitLoss"] = [];
+  let acc: Record<string, Accumulator> = {};
+  let profit = 0;
+  let loss = 0;
+  for (let day = offsetDay + 1; day <= days; day++) {
+    let dayRevenue = 0;
+    model.inputs.forEach((i) => {
+      if (hiddenInputs.has(i.number)) {
+        return;
+      }
+      const dailyGrowth = i.growthFreq ? i.growthPercent / i.growthFreq : 0;
+      if (!acc[i.number]) {
+        acc[i.number] = defaultAccumulator(i.seed);
+      }
+      if (!acc[i.number].isSaturated) {
+        acc[i.number].currentCount =
+          acc[i.number].currentCount + acc[i.number].currentCount * dailyGrowth;
+      }
+      let count = Math.round(acc[i.number].currentCount);
+      if (count >= i.saturation) {
+        acc[i.number].isSaturated = true;
+      }
+      i.curves.forEach((c) => {
+        count = count * c.curve[day % c.period];
+      });
+      count =
+        count +
+        count * Math[i.size > 0 ? "max" : "min"](i.variability * gMult, 0);
+      const revenue = (count / i.frequency) * i.size;
+      dayRevenue += revenue;
+      if (revenue >= 0) {
+        profit += revenue;
+      } else {
+        loss -= revenue;
+      }
+      data.push({
+        input: i.name,
+        day,
+        count,
+        revenue,
+      });
+    });
+    profitLoss.push({ day, total: dayRevenue });
+  }
+  return {
+    name,
+    data,
+    profitLoss,
+    profit,
+    loss,
+  };
+};
 const updateChart = (state: State): State => {
   const { model, days, offsetDay, hiddenInputs } = state.chartInputs;
-  const chartData = (name: string, model: Model, gMult: number) => {
-    const data: State["charts"][0]["data"] = [];
-    const profitLoss: State["charts"][0]["profitLoss"] = [];
-    let acc: Record<string, Accumulator> = {};
-    let profit = 0;
-    let loss = 0;
-    for (let day = offsetDay + 1; day <= days; day++) {
-      let dayRevenue = 0;
-      model.inputs.forEach((i) => {
-        if (hiddenInputs.has(i.number)) {
-          return;
-        }
-        const dailyGrowth = i.growthFreq ? i.growthPercent / i.growthFreq : 0;
-        if (!acc[i.number]) {
-          acc[i.number] = defaultAccumulator(i.seed);
-        }
-        if (!acc[i.number].isSaturated) {
-          acc[i.number].currentCount =
-            acc[i.number].currentCount +
-            acc[i.number].currentCount * dailyGrowth;
-        }
-        let count = Math.round(acc[i.number].currentCount);
-        if (count >= i.saturation) {
-          acc[i.number].isSaturated = true;
-        }
-        i.curves.forEach((c) => {
-          count = count * c.curve[day % c.period];
-        });
-        count = count + count * (i.variability * gMult);
-        const revenue = (count / i.frequency) * i.size;
-        dayRevenue += revenue;
-        if (revenue >= 0) {
-          profit += revenue;
-        } else {
-          loss -= revenue;
-        }
-        data.push({
-          input: i.name,
-          day,
-          count,
-          revenue,
-        });
-      });
-      profitLoss.push({ day, total: dayRevenue });
-    }
-    return {
-      name,
-      data,
-      profitLoss,
-      profit,
-      loss,
-    };
-  };
   if (model) {
-    state.charts = [
-      chartData("high", model, 1),
-      chartData("mid", model, 0),
-      chartData("low", model, -1),
+    state.showingCharts = [
+      getChartData("high", model, 1, days, offsetDay, hiddenInputs),
+      getChartData("mid", model, 0, days, offsetDay, hiddenInputs),
+      getChartData("low", model, -1, days, offsetDay, hiddenInputs),
     ];
   }
+  return state;
+};
+const cacheCharts = (state: State): State => {
+  state.models.forEach((model) => {
+    state.vizCache.set(model.number, getChartData("mid", model, 0));
+  });
   return state;
 };
 
 window.addEventListener("load", async () => {
   const state: State = {
-    loading: true,
+    loading: false,
     googleToken: null,
     sheetId: "1ywvFgv4YQGTOPddovWhQ0D_B5URN2NAp7y4yMGoCtoA",
     models: [],
@@ -105,7 +122,8 @@ window.addEventListener("load", async () => {
       offsetDay: 0,
       hiddenInputs: new Set(),
     },
-    charts: [],
+    showingCharts: [],
+    vizCache: new Map(),
   };
 
   const upd8 = initUI(state, async (event) => {
@@ -121,6 +139,7 @@ window.addEventListener("load", async () => {
           state.googleToken = value.token;
           await getAPI(state.googleToken, state.sheetId)?.reloadRemoteData();
           await addRemoteState(state);
+          cacheCharts(state);
           updateChart(state);
           state.loading = false;
           break;
@@ -133,9 +152,6 @@ window.addEventListener("load", async () => {
             case "Inputs":
               state.showingScreen = "Model";
               break;
-            case "Input":
-              state.showingScreen = "Inputs";
-              break;
           }
           break;
         }
@@ -143,9 +159,19 @@ window.addEventListener("load", async () => {
           const model = state.models.find((m) => m.number === value!.number);
           if (model) {
             state.chartInputs.model = model;
+            state.chartInputs.days = model.defaultDays;
+            state.chartInputs.offsetDay = model.defaultOffset;
             updateChart(state);
             state.showingScreen = "Model";
           }
+          break;
+        }
+        case "ShowInput": {
+          state.showingInput = inputs.get(value.number);
+          break;
+        }
+        case "CancelInputEdit": {
+          state.showingInput = undefined;
           break;
         }
         case "ToggleInputShowing": {
@@ -157,9 +183,26 @@ window.addEventListener("load", async () => {
           break;
         }
         case "SetInputValue": {
-          setInputData(value.number, value.field, value.value);
+          setInputData(
+            value.number === -1 ? state.showingInput! : value.number,
+            value.field,
+            value.value
+          );
           addRemoteState(state);
           updateChart(state);
+          break;
+        }
+        case "SaveInput": {
+          if (state.showingInput) {
+            const saveInput = state.showingInput;
+            state.showingInput = undefined;
+            setLoading(true);
+            api?.updateInput(saveInput);
+            await api?.reloadRemoteData();
+            addRemoteState(state);
+            updateChart(state);
+            state.loading = false;
+          }
           break;
         }
         case "ChooseInput": {
@@ -193,10 +236,40 @@ window.addEventListener("load", async () => {
           break;
         }
         case "CreateInput": {
+          state.showingInput = {
+            name: value.name,
+            curves: [],
+            number: -1,
+            frequency: 1,
+            size: 1,
+            growthPercent: 0,
+            growthFreq: 0,
+            notes: "",
+            seed: 1,
+            saturation: 1,
+            variability: 1,
+          };
+          state.createInputModel = value.number;
+          state.quickSearch = undefined;
+          state.quickSearchNumber = undefined;
+          break;
+        }
+        case "SaveInput": {
+          const input = state.showingInput;
+          const modelNumber = state.createInputModel;
+          state.createInputModel = undefined;
+          state.showingInput = undefined;
+          if (!input) {
+            return;
+          }
           setLoading(true);
-          // TODO create
+          const inputNumber = await api?.createInput(input);
+          if (modelNumber && inputNumber) {
+            await api?.addInput(modelNumber, inputNumber);
+          }
           await api?.reloadRemoteData();
           addRemoteState(state);
+          updateChart(state);
           state.loading = false;
           break;
         }

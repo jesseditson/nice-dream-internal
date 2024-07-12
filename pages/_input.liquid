@@ -1,7 +1,21 @@
-<div id="input" class="w-full hidden">
-  <input
-    id="name"
-    class="text-xl text-bold"
-    type="text" />
-  TODO delete button
+<div id="input" class="hidden w-full h-full top-0 left-0 fixed backdrop-blur-sm flex items-center justify-center z-20">
+  <div id="modal" class="ring-gray-200 ring-1 rounded-lg px-8 overflow-hidden flex flex-col min-w-72 shadow-md bg-white">
+    <h2 class="p-4 text-lg text-center font-bold text-gray-600">Input</h2>
+    <label class="pb-4">name: <input
+        id="name"
+        class="text-xl text-bold border p-2"
+        type="text" /></label>
+    <label class="pb-4">
+      notes:
+      <input
+        id="notes"
+        class="text-xl text-bold border p-2"
+        type="text" />
+    </label>
+    {% include "input-row" %}
+    <div class="flex justify-between my-8">
+      <button id="cancel" class="rounded-lg text-slate-400 px-4 py-2">Cancel</button>
+      <button id="save" class="rounded-lg bg-teal-500 text-white px-4 py-2 shadow-sm hover:shadow-lg">Save</button>
+    </div>
+  </div>
 </div>

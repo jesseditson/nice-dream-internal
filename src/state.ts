@@ -23,7 +23,22 @@ export type Input<C = Curve> = {
 export type Model<I = Input> = {
   number: number;
   name: string;
+  defaultDays: number;
+  defaultOffset: number;
   inputs: I[];
+};
+
+export type ChartData = {
+  name: string;
+  data: {
+    day: number;
+    input: string;
+    count: number;
+    revenue: number;
+  }[];
+  profit: number;
+  loss: number;
+  profitLoss: { day: number; total: number }[];
 };
 
 export type State = {
@@ -40,20 +55,11 @@ export type State = {
     model?: Model;
   };
   openInputs: Set<number>;
-  showingInput?: Input;
+  showingInput?: Input<number>;
+  createInputModel?: number;
   quickSearch?: "Input";
   quickSearchNumber?: number;
-  showingScreen: "Models" | "Inputs" | "Model" | "Input";
-  charts: {
-    name: string;
-    data: {
-      day: number;
-      input: string;
-      count: number;
-      revenue: number;
-    }[];
-    profit: number;
-    loss: number;
-    profitLoss: { day: number; total: number }[];
-  }[];
+  showingScreen: "Models" | "Inputs" | "Model";
+  showingCharts: ChartData[];
+  vizCache: Map<number, ChartData>;
 };

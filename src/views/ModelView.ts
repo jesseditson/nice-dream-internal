@@ -83,7 +83,18 @@ export class ModelView extends View {
         (_, el) => {
           const number = getDatasetNumber(el, "number");
           const field = invariant(el.dataset.field, "field") as keyof Input;
-          const value = parseFloat((el as HTMLInputElement).value);
+          let value: number | number[] = parseFloat(
+            (el as HTMLInputElement).value
+          );
+          if (field === "curves") {
+            const curves: number[] = [];
+            el.querySelectorAll("option").forEach((opt) => {
+              if (opt.selected) {
+                curves.push(parseFloat(opt.value));
+              }
+            });
+            value = curves;
+          }
           this.dispatchEvent({ SetInputValue: { number, value, field } });
         },
         ".input-field"
@@ -135,7 +146,7 @@ export class ModelView extends View {
   // https://leebyron.com/streamgraph/
   getChart(container: HTMLElement) {
     const profitLossSum: Record<string, number>[] = [];
-    this.state.charts.forEach(({ profitLoss, name }) => {
+    this.state.showingCharts.forEach(({ profitLoss, name }) => {
       profitLoss.forEach((d, index) => {
         profitLossSum[index] = profitLossSum[index] || d;
         profitLossSum[index][name] = d.total;
@@ -158,7 +169,7 @@ export class ModelView extends View {
       marks: [
         Plot.ruleY([0]),
         Plot.areaY(
-          this.state.charts.find(
+          this.state.showingCharts.find(
             (c) => c.name === this.state.chartInputs.showingStacks
           )?.data,
           {
@@ -291,7 +302,7 @@ export class ModelView extends View {
     });
     ["low", "mid", "high"].forEach((_n) => {
       const n = _n as "high" | "low" | "mid";
-      const chart = this.state.charts.find((c) => c.name === n);
+      const chart = this.state.showingCharts.find((c) => c.name === n);
       if (!chart) {
         console.error("chart", n, "not found");
         return;

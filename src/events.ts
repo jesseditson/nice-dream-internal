@@ -11,6 +11,7 @@ export type NDEvent =
   | {
       CreateInput: { name: string; number: number };
     }
+  | "SaveInput"
   | {
       ShowModel: { number: number };
     }
@@ -21,6 +22,7 @@ export type NDEvent =
       ChooseInput: { number: number };
     }
   | "CancelSearch"
+  | "CancelInputEdit"
   | {
       AddInput: { inputNumber: number; modelNumber: number };
     }
@@ -28,16 +30,20 @@ export type NDEvent =
       RemoveInput: { inputNumber: number; modelNumber: number };
     }
   | {
-      EditInput: Partial<Omit<Input, "curve"> & { curveNumber: number }>;
+      SaveInput: { number: number };
     }
   | {
-      EditModel: Partial<{ number: number; name: string }>;
+      SaveModel: { number: number };
     }
   | {
       ToggleInputShowing: { number: number };
     }
   | {
-      SetInputValue: { number: number; field: keyof Input; value: number };
+      SetInputValue: {
+        number: number;
+        field: keyof Input;
+        value: number | number[];
+      };
     }
   | {
       UpdateChart: Partial<Omit<State["chartInputs"], "model">>;

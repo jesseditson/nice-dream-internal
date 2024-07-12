@@ -84,12 +84,19 @@ export let inputs: Map<number, Input<number>> = new Map();
 export let curves: Map<number, Curve> = new Map();
 
 export const setInputData = (
-  num: number,
+  input: number | Input<number>,
   field: keyof Input,
-  value: number
+  value: number | number[]
 ) => {
-  const i = invariant(inputs.get(num), `input ${num} not found`);
-  inputs.set(num, {
+  const i =
+    typeof input === "number"
+      ? invariant(inputs.get(input), `input ${input} not found`)
+      : input;
+  if (typeof input !== "number") {
+    // @ts-expect-error allowed because typing wouldn't make this clearer
+    input[field] = value;
+  }
+  inputs.set(i.number, {
     ...i,
     [field]: value,
   });
@@ -120,6 +127,20 @@ export const getAPI = (
     reloadRemoteData: reloadRemoteData.bind(null, google),
     removeInput: removeInput.bind(null, google),
     addInput: addInput.bind(null, google),
+    createInput: (_input: Input<number>): Promise<number> => {
+      const curves = _input.curves;
+      const input: Omit<Input, "curves"> = _input;
+      // @ts-expect-error
+      delete input.curves;
+      return addRow(google, "Inputs", input, curves);
+    },
+    updateInput: (_input: Input<number>) => {
+      const curves = _input.curves;
+      const input: Omit<Input, "curves"> = _input;
+      // @ts-expect-error
+      delete input.curves;
+      updateRow(google, "Inputs", input.number, input, curves);
+    },
   };
 };
 
@@ -132,6 +153,69 @@ const removeInput = (
 };
 const addInput = (google: Google, modelNumber: number, inputNumber: number) => {
   return addCell(google, "Models", modelNumber, inputNumber);
+};
+
+const addRow = async (
+  google: Google,
+  sheet: string,
+  values: Record<string, string | number>,
+  rest: (string | number)[]
+): Promise<number> => {
+  // Fetch the first row to check how many values exist in this sheet
+  const vr = await google<ValuesResponse>(
+    "GET",
+    `values/${sheet}?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE`
+  );
+  const newRow = vr.values.length + 1;
+  const cols = vr.values[0];
+  const insertVals = cols
+    .slice(0, -1)
+    .map((c, idx) => {
+      const value = values[c];
+      if (idx < cols.length - 1 && (value === undefined || value === null)) {
+        throw new Error(`${JSON.stringify(values)} is missing key '${c}'`);
+      }
+      return value;
+    })
+    .concat(rest);
+  await google("PUT", `values/${sheet}!A${newRow}:A?valueInputOption=RAW`, {
+    range: `$${sheet}!A${newRow}:A`,
+    majorDimension: "ROWS",
+    values: [insertVals],
+  });
+  return newRow;
+};
+
+const updateRow = async (
+  google: Google,
+  sheet: string,
+  number: number,
+  values: Record<string, string | number>,
+  rest: (string | number)[]
+) => {
+  // Fetch the first row to check how many values exist in this sheet
+  const vr = await google<ValuesResponse>(
+    "GET",
+    `values/${sheet}?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE`
+  );
+  const cols = vr.values[0];
+  const insertVals = cols
+    .slice(0, -1)
+    .map((c, idx) => {
+      const value = values[c];
+      if (idx < cols.length - 1 && (value === undefined || value === null)) {
+        throw new Error(`${JSON.stringify(values)} is missing key '${c}'`);
+      }
+      return value;
+    })
+    .concat(rest);
+  const rowNum = number + 1;
+  const range = `${sheet}!A${rowNum}:${getCol(insertVals.length)}${rowNum}`;
+  await google("PUT", `values/${range}?valueInputOption=RAW`, {
+    range,
+    majorDimension: "ROWS",
+    values: [insertVals],
+  });
 };
 
 const addCell = async (
@@ -248,11 +332,10 @@ export const addRemoteState = async (state: State): Promise<State> => {
   });
   state.inputs = [];
   inputs.forEach((i, num) => {
-    const input = derefInput(num);
     if (state.showingInput?.number === i.number) {
-      state.showingInput = input;
+      state.showingInput = i;
     }
-    state.inputs.push(input);
+    state.inputs.push(derefInput(num));
   });
   return state;
 };
