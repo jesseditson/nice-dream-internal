@@ -19782,9 +19782,12 @@ var getMap = async (google2, name) => {
 var models = /* @__PURE__ */ new Map();
 var inputs = /* @__PURE__ */ new Map();
 var curves2 = /* @__PURE__ */ new Map();
-var setInputData = (num, field2, value) => {
-  const i = invariant(inputs.get(num), `input ${num} not found`);
-  inputs.set(num, {
+var setInputData = (input, field2, value) => {
+  const i = typeof input === "number" ? invariant(inputs.get(input), `input ${input} not found`) : input;
+  if (typeof input !== "number") {
+    input[field2] = value;
+  }
+  inputs.set(i.number, {
     ...i,
     [field2]: value
   });
@@ -19809,7 +19812,28 @@ var getAPI = (token, sheetId) => {
   return {
     reloadRemoteData: reloadRemoteData.bind(null, google2),
     removeInput: removeInput.bind(null, google2),
-    addInput: addInput.bind(null, google2)
+    addInput: addInput.bind(null, google2),
+    createModel: (name) => {
+      return addRow(
+        google2,
+        "Models",
+        { name, defaultDays: 30, defaultOffset: 0 },
+        []
+      );
+    },
+    deleteModel: (number6) => deleteRow(google2, "Models", number6),
+    createInput: (_input) => {
+      const curves3 = _input.curves;
+      const input = _input;
+      delete input.curves;
+      return addRow(google2, "Inputs", input, curves3);
+    },
+    updateInput: (_input) => {
+      const curves3 = _input.curves;
+      const input = _input;
+      delete input.curves;
+      return updateRow(google2, "Inputs", input.number, input, curves3);
+    }
   };
 };
 var removeInput = (google2, modelNumber, inputNumber) => {
@@ -19817,6 +19841,65 @@ var removeInput = (google2, modelNumber, inputNumber) => {
 };
 var addInput = (google2, modelNumber, inputNumber) => {
   return addCell(google2, "Models", modelNumber, inputNumber);
+};
+var addRow = async (google2, sheet, values2, rest) => {
+  const vr = await google2(
+    "GET",
+    `values/${sheet}?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE`
+  );
+  const newRow = vr.values.length + 1;
+  const cols = vr.values[0];
+  const insertVals = cols.slice(0, -1).map((c4, idx) => {
+    const value = values2[c4];
+    if (idx < cols.length - 1 && (value === void 0 || value === null)) {
+      throw new Error(`${JSON.stringify(values2)} is missing key '${c4}'`);
+    }
+    return value;
+  }).concat(rest);
+  const range3 = `${sheet}!A${newRow}:A:append`;
+  await google2("POST", `${range3}?valueInputOption=RAW`, {
+    range: range3,
+    majorDimension: "ROWS",
+    values: [insertVals]
+  });
+  return newRow;
+};
+var updateRow = async (google2, sheet, number6, values2, rest) => {
+  const vr = await google2(
+    "GET",
+    `values/${sheet}?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE`
+  );
+  const cols = vr.values[0];
+  const insertVals = cols.slice(0, -1).map((c4, idx) => {
+    const value = values2[c4];
+    if (idx < cols.length - 1 && (value === void 0 || value === null)) {
+      throw new Error(`${JSON.stringify(values2)} is missing key '${c4}'`);
+    }
+    return value;
+  }).concat(rest);
+  const rowNum = number6 + 1;
+  const range3 = `${sheet}!A${rowNum}:${getCol(insertVals.length)}${rowNum}`;
+  await google2("PUT", `values/${range3}?valueInputOption=RAW`, {
+    range: range3,
+    majorDimension: "ROWS",
+    values: [insertVals]
+  });
+};
+var deleteRow = async (google2, sheet, row) => {
+  await google2("POST", `:batchUpdate`, {
+    requests: [
+      {
+        deleteDimension: {
+          range: {
+            sheetId: sheet,
+            dimension: "ROWS",
+            startIndex: row,
+            endIndex: row + 1
+          }
+        }
+      }
+    ]
+  });
 };
 var addCell = async (google2, sheet, row, value) => {
   const rowNum = row + 1;
@@ -19906,11 +19989,10 @@ var addRemoteState = async (state) => {
   });
   state.inputs = [];
   inputs.forEach((i, num) => {
-    const input = derefInput(num);
     if (state.showingInput?.number === i.number) {
-      state.showingInput = input;
+      state.showingInput = i;
     }
-    state.inputs.push(input);
+    state.inputs.push(derefInput(num));
   });
   return state;
 };
@@ -20022,7 +20104,18 @@ var ModelView = class extends View {
         (_, el2) => {
           const number6 = getDatasetNumber(el2, "number");
           const field2 = invariant(el2.dataset.field, "field");
-          const value = parseFloat(el2.value);
+          let value = parseFloat(
+            el2.value
+          );
+          if (field2 === "curves") {
+            const curves3 = [];
+            el2.querySelectorAll("option").forEach((opt) => {
+              if (opt.selected) {
+                curves3.push(parseFloat(opt.value));
+              }
+            });
+            value = curves3;
+          }
           this.dispatchEvent({ SetInputValue: { number: number6, value, field: field2 } });
         },
         ".input-field"
@@ -20073,7 +20166,7 @@ var ModelView = class extends View {
   // https://leebyron.com/streamgraph/
   getChart(container) {
     const profitLossSum = [];
-    this.state.charts.forEach(({ profitLoss, name }) => {
+    this.state.showingCharts.forEach(({ profitLoss, name }) => {
       profitLoss.forEach((d, index2) => {
         profitLossSum[index2] = profitLossSum[index2] || d;
         profitLossSum[index2][name] = d.total;
@@ -20096,7 +20189,7 @@ var ModelView = class extends View {
       marks: [
         ruleY([0]),
         areaY(
-          this.state.charts.find(
+          this.state.showingCharts.find(
             (c4) => c4.name === this.state.chartInputs.showingStacks
           )?.data,
           {
@@ -20219,7 +20312,7 @@ var ModelView = class extends View {
     });
     ["low", "mid", "high"].forEach((_n) => {
       const n = _n;
-      const chart = this.state.charts.find((c4) => c4.name === n);
+      const chart = this.state.showingCharts.find((c4) => c4.name === n);
       if (!chart) {
         console.error("chart", n, "not found");
         return;
@@ -20253,37 +20346,120 @@ var ModelListView = class extends View {
     return ModelListView.id;
   }
   mount() {
+    const root2 = invariant(this.rootElement, "model list root");
     return [
+      this.eventListener(this.el("add-model-modal"), "click", (e) => {
+        if (e.target?.id === "add-model-modal") {
+          this.dispatchEvent("CancelCreateModel");
+        }
+      }),
+      this.eventListener("new-model-name", "keydown", (e) => {
+        if (e.key === "Escape") {
+          this.dispatchEvent("CancelCreateModel");
+        } else if (e.key === "Enter") {
+          this.dispatchEvent({
+            CreateModel: {
+              name: this.el("new-model-name").value
+            }
+          });
+        }
+      }),
       this.eventListener(
-        this.rootElement,
+        root2,
         "click",
         (_, el) => {
+          console.log(el);
           this.dispatchEvent({
             ShowModel: { number: parseInt(el.dataset.number) }
           });
         },
-        ".button"
-      )
+        ".model"
+      ),
+      this.eventListener(
+        root2,
+        "click",
+        (_, el) => {
+          if (confirm(
+            "Are you sure you want to delete this model? You won't be able to restore it."
+          )) {
+            this.dispatchEvent({
+              DeleteModel: { number: parseInt(el.dataset.number) }
+            });
+          }
+        },
+        ".delete-model"
+      ),
+      this.eventListener("add-model", "click", () => {
+        this.dispatchEvent("ShowCreateModel");
+      })
     ];
   }
   showing(state) {
     return !!state.googleToken && state.showingScreen === "Models";
   }
   updated() {
-    const modelList = this.template("list");
+    const modelList = invariant(this.rootElement, "model-list");
     this.setContent(modelList, "Models", ".title");
+    const { width } = this.rootElement.getBoundingClientRect();
     this.setContent(
       modelList,
       this.state.models.map((m) => {
         const mEl = this.template("list-item");
         this.setContent(mEl, m.name, ".name");
-        this.setAttrs(mEl, { title: m.name }, ".button");
-        this.setData(mEl, { number: m.number.toString() }, ".button");
+        this.setAttrs(mEl, { title: m.name }, ".model");
+        this.setData(mEl, { number: m.number.toString() }, ".model");
+        this.setData(mEl, { number: m.number.toString() }, ".delete-model");
+        const chartEl = this.findElement(mEl, ".chart");
+        const chartData = this.state.vizCache.get(m.number);
+        if (chartData) {
+          const height = parseFloat(getComputedStyle(document.documentElement).fontSize) * 6;
+          this.setContent(
+            chartEl,
+            plot({
+              height,
+              width,
+              padding: 0,
+              margin: 0,
+              y: {
+                label: null,
+                tickFormat: null
+              },
+              x: {
+                label: null,
+                tickFormat: null
+              },
+              color: {
+                // legend: true,
+                scheme: "pastel2"
+              },
+              marks: [
+                areaY(chartData.data, {
+                  x: "day",
+                  y: "revenue",
+                  z: "input",
+                  fill: "input"
+                }),
+                lineY(chartData.profitLoss, {
+                  x: "day",
+                  y: "total",
+                  stroke: "black",
+                  fillOpacity: 0.8
+                })
+              ]
+            })
+          );
+        }
         return mEl;
       }),
       ".list"
     );
-    this.setContent("list", modelList);
+    this.el("add-model-modal").classList.toggle(
+      "hidden",
+      !this.state.showCreateModel
+    );
+    if (this.state.showCreateModel) {
+      this.el("new-model-name").focus();
+    }
   }
 };
 
@@ -20554,14 +20730,81 @@ var InputView = class extends View {
   }
   mount() {
     const el = invariant(this.rootElement, "input root");
-    const number6 = this.input.number;
-    return [];
+    return [
+      this.eventListener(el, "click", (e) => {
+        if (e.target?.id === this.id) {
+          this.dispatchEvent("CancelInputEdit");
+        }
+      }),
+      this.eventListener(
+        el,
+        "change",
+        (_, el2) => {
+          const field2 = invariant(el2.dataset.field, "field");
+          let value = parseFloat(
+            el2.value
+          );
+          if (field2 === "curves") {
+            const curves3 = [];
+            el2.querySelectorAll("option").forEach((opt) => {
+              if (opt.selected) {
+                curves3.push(parseFloat(opt.value));
+              }
+            });
+            value = curves3;
+          }
+          this.dispatchEvent({
+            SetInputValue: { number: this.input.number, value, field: field2 }
+          });
+        },
+        ".input-field"
+      ),
+      this.eventListener(
+        "cancel",
+        "click",
+        () => this.dispatchEvent("CancelInputEdit")
+      ),
+      this.eventListener(
+        "save",
+        "click",
+        () => this.dispatchEvent("SaveInput")
+      )
+    ];
   }
   showing(state) {
-    return state.showingScreen === "Input";
+    return !!state.showingInput;
   }
   updated() {
-    this.setAttrs("name", { value: this.input.name });
+    const input = this.input;
+    const el = invariant(this.rootElement, "input view");
+    this.setAttrs("name", { value: input.name });
+    this.setAttrs("notes", { value: input.notes });
+    [
+      "size",
+      "frequency",
+      "growthPercent",
+      "growthFreq",
+      "saturation",
+      "seed",
+      "variability"
+    ].forEach((field2) => {
+      const value = input[field2];
+      this.setAttrs(el, { value }, `.${field2}`);
+    });
+    const selectedCurves = new Set(input.curves);
+    this.setContent(
+      el,
+      Array.from(curves2.entries()).map(([num, curve]) => {
+        const opt = document.createElement("option");
+        opt.value = `${num}`;
+        if (selectedCurves.has(num)) {
+          opt.selected = true;
+        }
+        this.setContent(opt, curve.name);
+        return opt;
+      }),
+      ".curves"
+    );
   }
 };
 
@@ -20578,71 +20821,80 @@ var defaultAccumulator = (currentCount) => ({
   currentCount,
   isSaturated: false
 });
+var getChartData = (name, model, gMult, days, offsetDay, hiddenInputs) => {
+  days = days || model.defaultDays;
+  offsetDay = offsetDay || model.defaultOffset;
+  hiddenInputs = hiddenInputs || /* @__PURE__ */ new Set();
+  const data = [];
+  const profitLoss = [];
+  let acc = {};
+  let profit = 0;
+  let loss = 0;
+  for (let day = offsetDay + 1; day <= days; day++) {
+    let dayRevenue = 0;
+    model.inputs.forEach((i) => {
+      if (hiddenInputs.has(i.number)) {
+        return;
+      }
+      const dailyGrowth = i.growthFreq ? i.growthPercent / i.growthFreq : 0;
+      if (!acc[i.number]) {
+        acc[i.number] = defaultAccumulator(i.seed);
+      }
+      if (!acc[i.number].isSaturated) {
+        acc[i.number].currentCount = acc[i.number].currentCount + acc[i.number].currentCount * dailyGrowth;
+      }
+      let count2 = Math.round(acc[i.number].currentCount);
+      if (count2 >= i.saturation) {
+        acc[i.number].isSaturated = true;
+      }
+      i.curves.forEach((c4) => {
+        count2 = count2 * c4.curve[day % c4.period];
+      });
+      count2 = count2 + count2 * Math[i.size > 0 ? "max" : "min"](i.variability * gMult, 0);
+      const revenue = count2 / i.frequency * i.size;
+      dayRevenue += revenue;
+      if (revenue >= 0) {
+        profit += revenue;
+      } else {
+        loss -= revenue;
+      }
+      data.push({
+        input: i.name,
+        day,
+        count: count2,
+        revenue
+      });
+    });
+    profitLoss.push({ day, total: dayRevenue });
+  }
+  return {
+    name,
+    data,
+    profitLoss,
+    profit,
+    loss
+  };
+};
 var updateChart = (state) => {
   const { model, days, offsetDay, hiddenInputs } = state.chartInputs;
-  const chartData = (name, model2, gMult) => {
-    const data = [];
-    const profitLoss = [];
-    let acc = {};
-    let profit = 0;
-    let loss = 0;
-    for (let day = offsetDay + 1; day <= days; day++) {
-      let dayRevenue = 0;
-      model2.inputs.forEach((i) => {
-        if (hiddenInputs.has(i.number)) {
-          return;
-        }
-        const dailyGrowth = i.growthFreq ? i.growthPercent / i.growthFreq : 0;
-        if (!acc[i.number]) {
-          acc[i.number] = defaultAccumulator(i.seed);
-        }
-        if (!acc[i.number].isSaturated) {
-          acc[i.number].currentCount = acc[i.number].currentCount + acc[i.number].currentCount * dailyGrowth;
-        }
-        let count2 = Math.round(acc[i.number].currentCount);
-        if (count2 >= i.saturation) {
-          acc[i.number].isSaturated = true;
-        }
-        i.curves.forEach((c4) => {
-          count2 = count2 * c4.curve[day % c4.period];
-        });
-        count2 = count2 + count2 * (i.variability * gMult);
-        const revenue = count2 / i.frequency * i.size;
-        dayRevenue += revenue;
-        if (revenue >= 0) {
-          profit += revenue;
-        } else {
-          loss -= revenue;
-        }
-        data.push({
-          input: i.name,
-          day,
-          count: count2,
-          revenue
-        });
-      });
-      profitLoss.push({ day, total: dayRevenue });
-    }
-    return {
-      name,
-      data,
-      profitLoss,
-      profit,
-      loss
-    };
-  };
   if (model) {
-    state.charts = [
-      chartData("high", model, 1),
-      chartData("mid", model, 0),
-      chartData("low", model, -1)
+    state.showingCharts = [
+      getChartData("high", model, 1, days, offsetDay, hiddenInputs),
+      getChartData("mid", model, 0, days, offsetDay, hiddenInputs),
+      getChartData("low", model, -1, days, offsetDay, hiddenInputs)
     ];
   }
   return state;
 };
+var cacheCharts = (state) => {
+  state.models.forEach((model) => {
+    state.vizCache.set(model.number, getChartData("mid", model, 0));
+  });
+  return state;
+};
 window.addEventListener("load", async () => {
   const state = {
-    loading: true,
+    loading: false,
     googleToken: null,
     sheetId: "1ywvFgv4YQGTOPddovWhQ0D_B5URN2NAp7y4yMGoCtoA",
     models: [],
@@ -20655,7 +20907,9 @@ window.addEventListener("load", async () => {
       offsetDay: 0,
       hiddenInputs: /* @__PURE__ */ new Set()
     },
-    charts: []
+    showCreateModel: false,
+    showingCharts: [],
+    vizCache: /* @__PURE__ */ new Map()
   };
   const upd8 = initUI(state, async (event) => {
     const api = getAPI(state.googleToken, state.sheetId);
@@ -20670,6 +20924,7 @@ window.addEventListener("load", async () => {
           state.googleToken = value.token;
           await getAPI(state.googleToken, state.sheetId)?.reloadRemoteData();
           await addRemoteState(state);
+          cacheCharts(state);
           updateChart(state);
           state.loading = false;
           break;
@@ -20682,19 +20937,47 @@ window.addEventListener("load", async () => {
             case "Inputs":
               state.showingScreen = "Model";
               break;
-            case "Input":
-              state.showingScreen = "Inputs";
-              break;
           }
+          break;
+        }
+        case "ShowCreateModel": {
+          state.showCreateModel = true;
+          break;
+        }
+        case "CancelCreateModel": {
+          state.showCreateModel = false;
+          break;
+        }
+        case "CreateModel": {
+          state.showCreateModel = false;
+          setLoading(true);
+          await api?.createModel(value.name);
+          state.loading = false;
+          break;
+        }
+        case "DeleteModel": {
+          setLoading(true);
+          await api?.deleteModel(value.number);
+          state.loading = false;
           break;
         }
         case "ShowModel": {
           const model = state.models.find((m) => m.number === value.number);
           if (model) {
             state.chartInputs.model = model;
+            state.chartInputs.days = model.defaultDays;
+            state.chartInputs.offsetDay = model.defaultOffset;
             updateChart(state);
             state.showingScreen = "Model";
           }
+          break;
+        }
+        case "ShowInput": {
+          state.showingInput = inputs.get(value.number);
+          break;
+        }
+        case "CancelInputEdit": {
+          state.showingInput = void 0;
           break;
         }
         case "ToggleInputShowing": {
@@ -20706,9 +20989,37 @@ window.addEventListener("load", async () => {
           break;
         }
         case "SetInputValue": {
-          setInputData(value.number, value.field, value.value);
+          setInputData(
+            value.number === -1 ? state.showingInput : value.number,
+            value.field,
+            value.value
+          );
           addRemoteState(state);
           updateChart(state);
+          break;
+        }
+        case "SaveInput": {
+          const input = state.showingInput;
+          const modelNumber = state.createInputModel;
+          state.createInputModel = void 0;
+          state.showingInput = void 0;
+          if (!input) {
+            return;
+          }
+          setLoading(true);
+          if (input.number === -1) {
+            const inputNumber = await api?.createInput(input);
+            if (modelNumber && inputNumber) {
+              await api?.addInput(modelNumber, inputNumber);
+            }
+          } else {
+            api?.updateInput(input);
+          }
+          await api?.reloadRemoteData();
+          addRemoteState(state);
+          updateChart(state);
+          state.loading = false;
+          break;
           break;
         }
         case "ChooseInput": {
@@ -20742,10 +21053,22 @@ window.addEventListener("load", async () => {
           break;
         }
         case "CreateInput": {
-          setLoading(true);
-          await api?.reloadRemoteData();
-          addRemoteState(state);
-          state.loading = false;
+          state.showingInput = {
+            name: value.name,
+            curves: [],
+            number: -1,
+            frequency: 1,
+            size: 1,
+            growthPercent: 0,
+            growthFreq: 0,
+            notes: "",
+            seed: 1,
+            saturation: 1,
+            variability: 1
+          };
+          state.createInputModel = value.number;
+          state.quickSearch = void 0;
+          state.quickSearchNumber = void 0;
           break;
         }
         case "UpdateChart": {
@@ -20763,6 +21086,9 @@ window.addEventListener("load", async () => {
           }
           updateChart(state);
         }
+        default:
+          alert(`Unhandled event ${ev}`);
+          return;
       }
     });
     upd8(state);
