@@ -17472,7 +17472,7 @@ function legendSymbols(symbol2, {
 }
 function legendItems(scale, options = {}, swatch) {
   let {
-    columns,
+    columns: columns2,
     tickFormat: tickFormat2,
     fontVariant = inferFontVariant(scale),
     // TODO label,
@@ -17489,10 +17489,10 @@ function legendItems(scale, options = {}, swatch) {
   tickFormat2 = inferTickFormat(scale.scale, scale.domain, void 0, tickFormat2);
   const swatches = create2("div", context).attr(
     "class",
-    `${className}-swatches ${className}-swatches-${columns != null ? "columns" : "wrap"}`
+    `${className}-swatches ${className}-swatches-${columns2 != null ? "columns" : "wrap"}`
   );
   let extraStyle;
-  if (columns != null) {
+  if (columns2 != null) {
     extraStyle = `:where(.${className}-swatches-columns .${className}-swatch) {
   display: flex;
   align-items: center;
@@ -17507,7 +17507,7 @@ function legendItems(scale, options = {}, swatch) {
   overflow: hidden;
   text-overflow: ellipsis;
 }`;
-    swatches.style("columns", columns).selectAll().data(scale.domain).enter().append("div").attr("class", `${className}-swatch`).call(swatch, scale, swatchWidth, swatchHeight).call(
+    swatches.style("columns", columns2).selectAll().data(scale.domain).enter().append("div").attr("class", `${className}-swatch`).call(swatch, scale, swatchWidth, swatchHeight).call(
       (item) => item.append("div").attr("class", `${className}-swatch-label`).attr("title", tickFormat2).text(tickFormat2)
     );
   } else {
@@ -19726,7 +19726,7 @@ var googleAPI = (token, baseURL) => async (method, endpoint, body) => {
 };
 
 // src/data.ts
-var unpackValues = (prefix, r, cb) => {
+var unpackValues = (r, cb) => {
   const fieldNames = r.values[0];
   for (let i = 0; i < r.values.length - 1; i++) {
     let rowIdx = i + 1;
@@ -19751,7 +19751,7 @@ var getMap = async (google2, name) => {
         "GET",
         "values/Inputs?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE"
       );
-      unpackValues("inputs", inputs2, (val, i) => {
+      unpackValues(inputs2, (val, i) => {
         oMap.set(i, val);
       });
       break;
@@ -19761,7 +19761,7 @@ var getMap = async (google2, name) => {
         "GET",
         "values/Curves?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE"
       );
-      unpackValues("curves", curves3, (val, i) => {
+      unpackValues(curves3, (val, i) => {
         oMap.set(i, val);
       });
       break;
@@ -19771,7 +19771,7 @@ var getMap = async (google2, name) => {
         "GET",
         "values/Models?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE"
       );
-      unpackValues("models", models2, (val, i) => {
+      unpackValues(models2, (val, i) => {
         oMap.set(i, val);
       });
       break;
@@ -19798,16 +19798,64 @@ var derefInput = (id2) => {
     )
   };
 };
-var reloadRemoteData = async (token, sheetId) => {
+var getAPI = (token, sheetId) => {
+  if (!token) {
+    return;
+  }
   const google2 = googleAPI(
     token.access_token,
     `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}`
   );
+  return {
+    reloadRemoteData: reloadRemoteData.bind(null, google2),
+    removeInput: removeInput.bind(null, google2)
+  };
+};
+var removeInput = (google2, modelNumber, inputNumber) => {
+  return deleteCell(google2, "Models", modelNumber, inputNumber);
+};
+var deleteCell = async (google2, sheet, row, cellMatch) => {
+  const rowNum = row + 1;
+  const hr = await google2(
+    "GET",
+    `values/${sheet}!1:1?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE`
+  );
+  const startCol = getCol(hr.values.length);
+  const vr = await google2(
+    "GET",
+    `values/${sheet}!${startCol}${rowNum}:${rowNum}?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE`
+  );
+  const newValues = vr.values[0].filter((v) => v !== cellMatch);
+  if (newValues.length === vr.values[0].length) {
+    throw new Error(`${cellMatch} not found in ${vr.values[0]}`);
+  }
+  newValues.push("");
+  await google2(
+    "PUT",
+    `values/${sheet}!${startCol}${rowNum}:${rowNum}?valueInputOption=RAW`,
+    {
+      range: `${sheet}!${startCol}${rowNum}:${rowNum}`,
+      majorDimension: "ROWS",
+      values: [newValues]
+    }
+  );
+};
+var reloadRemoteData = async (google2) => {
   [models, inputs, curves2] = await Promise.all([
     getMap(google2, "Models"),
     getMap(google2, "Inputs"),
     getMap(google2, "Curves")
   ]);
+  models.forEach((m) => {
+    if (typeof m.inputs === "number") {
+      m.inputs = [m.inputs];
+    }
+  });
+  inputs.forEach((i) => {
+    if (typeof i.curves === "number") {
+      i.curves = [i.curves];
+    }
+  });
   curves2.forEach((c4) => {
     const extrapolatedCurve = [];
     if (typeof c4.curve === "number") {
@@ -19844,6 +19892,37 @@ var addRemoteState = async (state) => {
     state.inputs.push(input);
   });
   return state;
+};
+var columns = [
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "I",
+  "J",
+  "K",
+  "L",
+  "M",
+  "N",
+  "O",
+  "P",
+  "Q",
+  "R",
+  "S",
+  "T",
+  "U",
+  "V",
+  "W",
+  "X",
+  "Y",
+  "Z"
+];
+var getCol = (number6) => {
+  return invariant(columns[number6], `UNSUPPORTED INDEX ${number6}`);
 };
 
 // src/views/ModelView.ts
@@ -20223,8 +20302,14 @@ var QuickSearch = class extends View {
   }
   get allResults() {
     switch (this.state.quickSearch) {
-      case "Input":
-        return this.state.inputs.slice(0, 8);
+      case "Input": {
+        const existing = new Set(
+          this.state.chartInputs.model?.inputs.map((i) => i.number) || []
+        );
+        return this.state.inputs.filter((i) => {
+          return !existing.has(i.number);
+        }).slice(0, 8);
+      }
     }
     return [];
   }
@@ -20233,7 +20318,7 @@ var QuickSearch = class extends View {
       return this.allResults;
     }
     return this.allResults.filter((i) => {
-      i.name.includes(this.input.value);
+      return i.name.toLowerCase().includes(this.input.value.toLowerCase());
     });
   }
   mount() {
@@ -20250,21 +20335,18 @@ var QuickSearch = class extends View {
         }
       }),
       this.eventListener("typeahead", "input", () => {
-        if (this.input.value) {
-          this.setContent(
-            "create-result",
-            `Create new ${this.state.quickSearch} named ${this.input.value}`
-          );
-        }
-        this.el("create-result").classList.toggle("hidden", !this.input.value);
+        this.internalUpdate();
       }),
       this.eventListener(
         root2,
         "click",
         (_, e) => {
-          const eventName = `Choose${this.state.quickSearch}`;
+          const eventName = `Add${this.state.quickSearch}`;
           this.dispatchEvent({
-            [eventName]: { number: parseInt(e.dataset.number) }
+            [eventName]: {
+              inputNumber: parseInt(e.dataset.number),
+              modelNumber: this.state.quickSearchNumber
+            }
           });
         },
         ".result"
@@ -20294,6 +20376,13 @@ var QuickSearch = class extends View {
         return rEl;
       })
     );
+    if (this.input.value) {
+      this.setContent(
+        "create-result",
+        `Create new ${this.state.quickSearch} named ${this.input.value}`
+      );
+    }
+    this.el("create-result").classList.toggle("hidden", !this.input.value);
   }
 };
 
@@ -20546,11 +20635,12 @@ window.addEventListener("load", async () => {
     charts: []
   };
   const upd8 = initUI(state, async (event) => {
+    const api = getAPI(state.googleToken, state.sheetId);
     await matchEnum(event, async (ev, value) => {
       switch (ev) {
         case "SignedIn": {
           state.googleToken = value.token;
-          await reloadRemoteData(state.googleToken, state.sheetId);
+          await getAPI(state.googleToken, state.sheetId)?.reloadRemoteData();
           await addRemoteState(state);
           updateChart(state);
           break;
@@ -20602,8 +20692,17 @@ window.addEventListener("load", async () => {
           state.quickSearchNumber = void 0;
           break;
         }
+        case "AddInput": {
+          break;
+        }
+        case "RemoveInput": {
+          await api?.removeInput(value.modelNumber, value.inputNumber);
+          await api?.reloadRemoteData();
+          addRemoteState(state);
+          break;
+        }
         case "CreateInput": {
-          await reloadRemoteData(state.googleToken, state.sheetId);
+          await api?.reloadRemoteData();
           addRemoteState(state);
           break;
         }
