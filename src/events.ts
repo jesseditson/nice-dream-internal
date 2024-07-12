@@ -3,10 +3,13 @@ import { Input, State } from "./state";
 export type NDEvent =
   | { SignedIn: { token: google.accounts.oauth2.TokenResponse } }
   | "GoBack"
-  | "NewModel"
-  | "NewInput"
+  | "ShowCreateModel"
+  | "CancelCreateModel"
   | {
       CreateModel: { name: string };
+    }
+  | {
+      DeleteModel: { number: number };
     }
   | {
       CreateInput: { name: string; number: number };

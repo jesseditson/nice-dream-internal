@@ -59,6 +59,7 @@ export type State = {
   createInputModel?: number;
   quickSearch?: "Input";
   quickSearchNumber?: number;
+  showCreateModel: boolean;
   showingScreen: "Models" | "Inputs" | "Model";
   showingCharts: ChartData[];
   vizCache: Map<number, ChartData>;

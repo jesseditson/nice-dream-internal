@@ -127,6 +127,15 @@ export const getAPI = (
     reloadRemoteData: reloadRemoteData.bind(null, google),
     removeInput: removeInput.bind(null, google),
     addInput: addInput.bind(null, google),
+    createModel: (name: string) => {
+      return addRow(
+        google,
+        "Models",
+        { name, defaultDays: 30, defaultOffset: 0 },
+        []
+      );
+    },
+    deleteModel: (number: number) => deleteRow(google, "Models", number),
     createInput: (_input: Input<number>): Promise<number> => {
       const curves = _input.curves;
       const input: Omit<Input, "curves"> = _input;
@@ -139,7 +148,7 @@ export const getAPI = (
       const input: Omit<Input, "curves"> = _input;
       // @ts-expect-error
       delete input.curves;
-      updateRow(google, "Inputs", input.number, input, curves);
+      return updateRow(google, "Inputs", input.number, input, curves);
     },
   };
 };
@@ -178,8 +187,9 @@ const addRow = async (
       return value;
     })
     .concat(rest);
-  await google("PUT", `values/${sheet}!A${newRow}:A?valueInputOption=RAW`, {
-    range: `$${sheet}!A${newRow}:A`,
+  const range = `${sheet}!A${newRow}:A:append`;
+  await google("POST", `${range}?valueInputOption=RAW`, {
+    range,
     majorDimension: "ROWS",
     values: [insertVals],
   });
@@ -215,6 +225,23 @@ const updateRow = async (
     range,
     majorDimension: "ROWS",
     values: [insertVals],
+  });
+};
+
+const deleteRow = async (google: Google, sheet: string, row: number) => {
+  await google<ValuesResponse>("POST", `:batchUpdate`, {
+    requests: [
+      {
+        deleteDimension: {
+          range: {
+            sheetId: sheet,
+            dimension: "ROWS",
+            startIndex: row,
+            endIndex: row + 1,
+          },
+        },
+      },
+    ],
   });
 };
 

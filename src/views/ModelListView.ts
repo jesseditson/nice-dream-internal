@@ -1,6 +1,7 @@
 import * as Plot from "@observablehq/plot";
 import { State } from "../state";
 import { View } from "./View";
+import { invariant } from "../utils";
 
 export class ModelListView extends View {
   static get id() {
@@ -12,17 +13,54 @@ export class ModelListView extends View {
   }
 
   mount() {
+    const root = invariant(this.rootElement, "model list root");
     return [
+      this.eventListener(this.el("add-model-modal"), "click", (e) => {
+        if ((e.target as HTMLElement)?.id === "add-model-modal") {
+          this.dispatchEvent("CancelCreateModel");
+        }
+      }),
+      this.eventListener("new-model-name", "keydown", (e) => {
+        if (e.key === "Escape") {
+          this.dispatchEvent("CancelCreateModel");
+        } else if (e.key === "Enter") {
+          this.dispatchEvent({
+            CreateModel: {
+              name: this.el<HTMLInputElement>("new-model-name").value,
+            },
+          });
+        }
+      }),
       this.eventListener(
-        this.rootElement!,
+        root,
         "click",
         (_, el) => {
+          console.log(el);
           this.dispatchEvent({
             ShowModel: { number: parseInt(el.dataset.number!) },
           });
         },
-        ".button"
+        ".model"
       ),
+      this.eventListener(
+        root,
+        "click",
+        (_, el) => {
+          if (
+            confirm(
+              "Are you sure you want to delete this model? You won't be able to restore it."
+            )
+          ) {
+            this.dispatchEvent({
+              DeleteModel: { number: parseInt(el.dataset.number!) },
+            });
+          }
+        },
+        ".delete-model"
+      ),
+      this.eventListener("add-model", "click", () => {
+        this.dispatchEvent("ShowCreateModel");
+      }),
     ];
   }
 
@@ -31,7 +69,7 @@ export class ModelListView extends View {
   }
 
   updated() {
-    const modelList = this.template("list");
+    const modelList = invariant(this.rootElement, "model-list");
     this.setContent(modelList, "Models", ".title");
     const { width } = this.rootElement!.getBoundingClientRect();
     this.setContent(
@@ -39,8 +77,9 @@ export class ModelListView extends View {
       this.state.models.map((m) => {
         const mEl = this.template("list-item");
         this.setContent(mEl, m.name, ".name");
-        this.setAttrs(mEl, { title: m.name }, ".button");
-        this.setData(mEl, { number: m.number.toString() }, ".button");
+        this.setAttrs(mEl, { title: m.name }, ".model");
+        this.setData(mEl, { number: m.number.toString() }, ".model");
+        this.setData(mEl, { number: m.number.toString() }, ".delete-model");
         const chartEl = this.findElement(mEl, ".chart");
         const chartData = this.state.vizCache.get(m.number);
         if (chartData) {
@@ -87,6 +126,13 @@ export class ModelListView extends View {
       }),
       ".list"
     );
-    this.setContent("list", modelList);
+
+    this.el("add-model-modal").classList.toggle(
+      "hidden",
+      !this.state.showCreateModel
+    );
+    if (this.state.showCreateModel) {
+      this.el("new-model-name").focus();
+    }
   }
 }

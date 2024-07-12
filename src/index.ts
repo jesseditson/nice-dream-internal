@@ -122,6 +122,7 @@ window.addEventListener("load", async () => {
       offsetDay: 0,
       hiddenInputs: new Set(),
     },
+    showCreateModel: false,
     showingCharts: [],
     vizCache: new Map(),
   };
@@ -153,6 +154,27 @@ window.addEventListener("load", async () => {
               state.showingScreen = "Model";
               break;
           }
+          break;
+        }
+        case "ShowCreateModel": {
+          state.showCreateModel = true;
+          break;
+        }
+        case "CancelCreateModel": {
+          state.showCreateModel = false;
+          break;
+        }
+        case "CreateModel": {
+          state.showCreateModel = false;
+          setLoading(true);
+          await api?.createModel(value.name);
+          state.loading = false;
+          break;
+        }
+        case "DeleteModel": {
+          setLoading(true);
+          await api?.deleteModel(value.number);
+          state.loading = false;
           break;
         }
         case "ShowModel": {
@@ -193,16 +215,27 @@ window.addEventListener("load", async () => {
           break;
         }
         case "SaveInput": {
-          if (state.showingInput) {
-            const saveInput = state.showingInput;
-            state.showingInput = undefined;
-            setLoading(true);
-            api?.updateInput(saveInput);
-            await api?.reloadRemoteData();
-            addRemoteState(state);
-            updateChart(state);
-            state.loading = false;
+          const input = state.showingInput;
+          const modelNumber = state.createInputModel;
+          state.createInputModel = undefined;
+          state.showingInput = undefined;
+          if (!input) {
+            return;
           }
+          setLoading(true);
+          if (input.number === -1) {
+            const inputNumber = await api?.createInput(input);
+            if (modelNumber && inputNumber) {
+              await api?.addInput(modelNumber, inputNumber);
+            }
+          } else {
+            api?.updateInput(input);
+          }
+          await api?.reloadRemoteData();
+          addRemoteState(state);
+          updateChart(state);
+          state.loading = false;
+          break;
           break;
         }
         case "ChooseInput": {
@@ -254,25 +287,6 @@ window.addEventListener("load", async () => {
           state.quickSearchNumber = undefined;
           break;
         }
-        case "SaveInput": {
-          const input = state.showingInput;
-          const modelNumber = state.createInputModel;
-          state.createInputModel = undefined;
-          state.showingInput = undefined;
-          if (!input) {
-            return;
-          }
-          setLoading(true);
-          const inputNumber = await api?.createInput(input);
-          if (modelNumber && inputNumber) {
-            await api?.addInput(modelNumber, inputNumber);
-          }
-          await api?.reloadRemoteData();
-          addRemoteState(state);
-          updateChart(state);
-          state.loading = false;
-          break;
-        }
         case "UpdateChart": {
           if (value.days) {
             state.chartInputs.days = value.days;
@@ -288,6 +302,9 @@ window.addEventListener("load", async () => {
           }
           updateChart(state);
         }
+        default:
+          alert(`Unhandled event ${ev}`);
+          return;
       }
     });
     upd8(state);

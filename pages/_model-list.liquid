@@ -1,38 +1,37 @@
-<div id="model-list" class="hidden">
-  <div id="list">
-    <div data-template="list" class="flex flex-col gap-4">
-      <div class="flex justify-between">
-        <h2 class="title font-bold text-2xl">Models</h2>
-        <button id="add-model">
-          <i data-feather="plus-square"></i>
-        </button>
-      </div>
-      <ul class="list flex flex-col gap-2 border-t border-slate-200">
-        <li data-template="list-item" class="group px-4 py-10 flex border-slate-200 border-b relative">
-          <button id="delete-model" class="hidden group-hover:visible">
-            <i data-feather="trash-2"></i>
-          </button>
-          <button class="button flex justify-between flex-1" title="Loading...">
-            <div class="name z-10 font-bold text-xl flex-1">Loading...</div>
-            <div class="chart absolute top-0 left-0 h-24 w-full opacity-40 z-0"></div>
-            <div class="z-10">
-              <i data-feather="chevron-right"></i>
-            </div>
-          </button>
-        </li>
-      </ul>
-    </div>
+<div
+  id="model-list"
+  class="hidden"
+  class="flex flex-col gap-4">
+  <div class="flex justify-between">
+    <h2 class="title font-bold text-2xl">Models</h2>
+    <button id="add-model" class="z-20">
+      <i data-feather="plus-square"></i>
+    </button>
   </div>
-</div>
-<div id="add-model-modal" class="hidden w-full h-full top-0 left-0 fixed backdrop-blur-sm flex items-center justify-center z-20">
-  <div id="modal" class="ring-gray-200 ring-1 rounded-lg p-1 overflow-hidden flex flex-col min-w-72 shadow-md bg-white">
-    <h2 id="title" class="p-4 text-lg text-center font-bold text-gray-600">Create Model</h2>
-    <input
-      id="new-model-name"
-      class="px-5 py-3 border-gray-600 border-b-1"
-      type="text"
-      autocomplete="off"
-      autofocus="true"
-      placeholder="name" />
+  <ul class="list flex flex-col gap-2 border-t border-slate-200">
+    <li data-template="list-item" class="group flex gap-4 border-slate-200 border-b relative">
+      <button class="delete-model z-20 ml-4 hidden group-hover:block cursor-pointer">
+        <i data-feather="trash-2"></i>
+      </button>
+      <button class="model flex text-left flex-1 h-24 w-full items-center" title="Loading...">
+        <div class="name z-10 font-bold text-xl ml-4 flex-1 justify-start">Loading...</div>
+        <div class="z-10">
+          <i data-feather="chevron-right"></i>
+        </div>
+      </button>
+      <div class="chart absolute top-0 left-0 h-24 w-full opacity-40 z-0"></div>
+    </li>
+  </ul>
+  <div id="add-model-modal" class="hidden w-full h-full top-0 left-0 fixed backdrop-blur-sm flex items-center justify-center z-20">
+    <div id="modal" class="ring-gray-200 ring-1 rounded-lg p-1 overflow-hidden flex flex-col min-w-72 shadow-md bg-white">
+      <h2 id="title" class="p-4 text-lg text-center font-bold text-gray-600">Create Model</h2>
+      <input
+        id="new-model-name"
+        class="px-5 py-3 border-gray-600 border-b-1"
+        type="text"
+        autocomplete="off"
+        autofocus="true"
+        placeholder="Model Name" />
+    </div>
   </div>
 </div>
