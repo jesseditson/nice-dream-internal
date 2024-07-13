@@ -20242,7 +20242,8 @@ var ModelView = class extends View {
             x: "day",
             y: "revenue",
             z: "input",
-            fill: "input"
+            fill: "input",
+            tip: true
           }
         ),
         lineY(profitLossSum, {
@@ -20374,7 +20375,6 @@ var ModelView = class extends View {
       }
       this.setContent(`toggle-${n}`, toggleIcon, ".icon");
     });
-    console.log(this.modelName, model.name);
     const edited = this.state.chartInputs.days !== model.defaultDays || this.state.chartInputs.offsetDay !== model.defaultOffset || model.name !== this.modelName;
     this.el("save-controls").classList.toggle("hidden", !edited);
   }
@@ -20910,7 +20910,7 @@ var getChartData = (name, model, gMult, days, offsetDay, hiddenInputs) => {
       i.curves.forEach((c4) => {
         count2 = count2 * c4.curve[day % c4.period];
       });
-      count2 = count2 + count2 * Math[i.size > 0 ? "max" : "min"](i.variability * gMult, 0);
+      count2 = count2 + count2 * i.variability * gMult;
       if (day >= startDay) {
         const revenue = count2 / i.frequency * i.size;
         dayRevenue += revenue;
@@ -21165,10 +21165,10 @@ window.addEventListener("load", async () => {
           break;
         }
         case "UpdateChart": {
-          if (value.days) {
+          if (value.days !== void 0) {
             state.chartInputs.days = value.days;
           }
-          if (value.offsetDay) {
+          if (value.offsetDay !== void 0) {
             state.chartInputs.offsetDay = value.offsetDay;
           }
           if (value.hiddenInputs) {
