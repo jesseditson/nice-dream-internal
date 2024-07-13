@@ -208,6 +208,7 @@ export class ModelView extends View {
             y: "revenue",
             z: "input",
             fill: "input",
+            tip: true,
           }
         ),
         Plot.lineY(profitLossSum, {
@@ -348,7 +349,6 @@ export class ModelView extends View {
       }
       this.setContent(`toggle-${n}`, toggleIcon, ".icon");
     });
-    console.log(this.modelName, model.name);
     const edited =
       this.state.chartInputs.days !== model.defaultDays ||
       this.state.chartInputs.offsetDay !== model.defaultOffset ||

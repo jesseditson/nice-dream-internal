@@ -63,9 +63,7 @@ const getChartData = (
       i.curves.forEach((c) => {
         count = count * c.curve[day % c.period];
       });
-      count =
-        count +
-        count * Math[i.size > 0 ? "max" : "min"](i.variability * gMult, 0);
+      count = count + count * i.variability * gMult;
       if (day >= startDay) {
         const revenue = (count / i.frequency) * i.size;
         dayRevenue += revenue;
@@ -322,10 +320,10 @@ window.addEventListener("load", async () => {
           break;
         }
         case "UpdateChart": {
-          if (value.days) {
+          if (value.days !== undefined) {
             state.chartInputs.days = value.days;
           }
-          if (value.offsetDay) {
+          if (value.offsetDay !== undefined) {
             state.chartInputs.offsetDay = value.offsetDay;
           }
           if (value.hiddenInputs) {
