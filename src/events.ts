@@ -38,6 +38,7 @@ export type NDEvent =
   | {
       UpdateModel: Omit<Model, "inputs">;
     }
+  | "ResetModelChanges"
   | {
       ToggleInputShowing: { number: number };
     }

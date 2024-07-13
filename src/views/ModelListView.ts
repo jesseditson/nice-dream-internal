@@ -35,7 +35,6 @@ export class ModelListView extends View {
         root,
         "click",
         (_, el) => {
-          console.log(el);
           this.dispatchEvent({
             ShowModel: { number: parseInt(el.dataset.number!) },
           });

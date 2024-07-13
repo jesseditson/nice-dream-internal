@@ -188,6 +188,18 @@ window.addEventListener("load", async () => {
           await api?.reloadRemoteData();
           addRemoteState(state);
           state.loading = false;
+          if (state.chartInputs.model) {
+            state.chartInputs.model = state.models.find(
+              (m) => (m.number = state.chartInputs.model!.number)
+            );
+          }
+          break;
+        }
+        case "ResetModelChanges": {
+          const savedModel = models.get(state.chartInputs.model!.number)!;
+          state.chartInputs.model!.name = savedModel.name;
+          state.chartInputs.days = savedModel.defaultDays;
+          state.chartInputs.offsetDay = savedModel.defaultOffset;
           break;
         }
         case "DeleteModel": {

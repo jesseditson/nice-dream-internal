@@ -26,6 +26,11 @@ export class ModelView extends View {
     return this.state.chartInputs.model!.number;
   }
 
+  private _modelName: string | undefined;
+  get modelName() {
+    return this._modelName || this.state.chartInputs.model!.name;
+  }
+
   mount() {
     const el = invariant(this.rootElement, "model root");
     return [
@@ -86,13 +91,22 @@ export class ModelView extends View {
         });
       }),
       this.eventListener("model-name", "change", () => {
+        this._modelName = this.el<HTMLInputElement>("model-name").value;
         this.internalUpdate();
       }),
       this.eventListener("reset-changes", "click", () => {
-        // todo
+        this.dispatchEvent("ResetModelChanges");
       }),
       this.eventListener("save-changes", "click", () => {
-        // todo
+        const model = this.state.chartInputs.model!;
+        model.name = this.modelName;
+        model.defaultDays = Number.parseInt(
+          this.el<HTMLInputElement>("days").value
+        );
+        model.defaultOffset = Number.parseInt(
+          this.el<HTMLInputElement>("offset").value
+        );
+        this.dispatchEvent({ UpdateModel: model });
       }),
       this.eventListener(
         el,
@@ -279,7 +293,7 @@ export class ModelView extends View {
     this.setContent("chart", this.getChart(this.el("chart")));
 
     const model = invariant(this.state.chartInputs.model, "model");
-    this.setAttrs("model-name", { value: model.name });
+    this.setAttrs("model-name", { value: this.modelName });
     const channelCollection = this.template("collection");
     this.setContent(
       channelCollection,
@@ -334,11 +348,11 @@ export class ModelView extends View {
       }
       this.setContent(`toggle-${n}`, toggleIcon, ".icon");
     });
-
+    console.log(this.modelName, model.name);
     const edited =
       this.state.chartInputs.days !== model.defaultDays ||
       this.state.chartInputs.offsetDay !== model.defaultOffset ||
-      model.name !== this.el<HTMLInputElement>("model-name").value;
+      model.name !== this.modelName;
     this.el("save-controls").classList.toggle("hidden", !edited);
   }
 
