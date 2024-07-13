@@ -200,6 +200,7 @@ window.addEventListener("load", async () => {
           state.chartInputs.model!.name = savedModel.name;
           state.chartInputs.days = savedModel.defaultDays;
           state.chartInputs.offsetDay = savedModel.defaultOffset;
+          updateChart(state);
           break;
         }
         case "DeleteModel": {

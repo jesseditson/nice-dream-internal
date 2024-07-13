@@ -63,8 +63,8 @@ export class InputView extends View {
   updated() {
     const input = this.input;
     const el = invariant(this.rootElement, "input view");
-    this.setAttrs("name", { value: input.name });
-    this.setAttrs("notes", { value: input.notes });
+    this.el<HTMLInputElement>("name").value = input.name;
+    this.el<HTMLInputElement>("notes").value = input.notes;
     (
       [
         "size",

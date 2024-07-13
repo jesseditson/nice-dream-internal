@@ -293,7 +293,7 @@ export class ModelView extends View {
     this.setContent("chart", this.getChart(this.el("chart")));
 
     const model = invariant(this.state.chartInputs.model, "model");
-    this.setAttrs("model-name", { value: this.modelName });
+    this.el<HTMLInputElement>("model-name").value = this.modelName;
     const channelCollection = this.template("collection");
     this.setContent(
       channelCollection,
@@ -326,10 +326,10 @@ export class ModelView extends View {
       ".collection"
     );
     this.setContent("inputs", channelCollection);
-    this.setAttrs("offset", { value: `${this.state.chartInputs.offsetDay}` });
-    this.setAttrs("days", {
-      value: `${this.state.chartInputs.days}`,
-    });
+    this.el<HTMLInputElement>(
+      "offset"
+    ).value = `${this.state.chartInputs.offsetDay}`;
+    this.el<HTMLInputElement>("days").value = `${this.state.chartInputs.days}`;
     ["low", "mid", "high"].forEach((_n) => {
       const n = _n as "high" | "low" | "mid";
       const chart = this.state.showingCharts.find((c) => c.name === n);
