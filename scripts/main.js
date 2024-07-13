@@ -20703,6 +20703,7 @@ var SignInView = class extends View {
   get id() {
     return SignInView.id;
   }
+  initialized = false;
   mount() {
     return [
       this.eventListener("authorize-sheets", "click", () => {
@@ -20753,8 +20754,18 @@ var SignInView = class extends View {
     }
   }
   becameVisible() {
-    this.maybeSignIn();
-    authCallback = this.maybeSignIn.bind(this);
+    if (!this.initialized) {
+      const script = document.createElement("script");
+      script.src = "https://accounts.google.com/gsi/client";
+      document.body.appendChild(script);
+      const int = setInterval(() => {
+        if (globalThis.google) {
+          clearInterval(int);
+          authCallback = this.maybeSignIn.bind(this);
+          this.maybeSignIn();
+        }
+      }, 25);
+    }
   }
   showing(state) {
     return state.googleToken === null;
