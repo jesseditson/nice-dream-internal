@@ -33,7 +33,7 @@ export const matches = <T extends EnumType>(
 };
 
 export const invariant = <T>(v: T, message?: string): NonNullable<T> => {
-  if (!v) {
+  if (v === undefined || v === null) {
     throw new Error(message || "invariant violated");
   }
   return v;

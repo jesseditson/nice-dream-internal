@@ -9,6 +9,30 @@ type ValuesResponse = {
   range: string;
   values: (string | number)[][];
 };
+type SheetResponse = {
+  spreadsheetId: string;
+  properties: {
+    title: string;
+    locale: string;
+    autoRecalc: string;
+    timeZone: string;
+    defaultFormat: any;
+    spreadsheetTheme: any;
+  };
+  sheets: {
+    properties: {
+      sheetId: number;
+      title: string;
+      index: number;
+      sheetType: string;
+      gridProperties: {
+        rowCount: number;
+        columnCount: number;
+      };
+    };
+  }[];
+  spreadsheetUrl: string;
+};
 type Google = ReturnType<typeof googleAPI>;
 
 const unpackValues = (
@@ -33,6 +57,9 @@ const unpackValues = (
     const obj = fieldNames.reduce((o, fn, idx) => {
       const isLast = idx === fieldNames.length - 1;
       o[fn] = isLast && restValues ? restValues : row[idx];
+      if (isLast && !o[fn]) {
+        o[fn] = [];
+      }
       return o;
     }, {} as Record<string, string | number | (string | number)[]>);
     cb({ ...obj, number: rowIdx }, rowIdx);
@@ -187,8 +214,8 @@ const addRow = async (
       return value;
     })
     .concat(rest);
-  const range = `${sheet}!A${newRow}:A:append`;
-  await google("POST", `${range}?valueInputOption=RAW`, {
+  const range = `${sheet}`;
+  await google("POST", `values/${range}:append?valueInputOption=RAW`, {
     range,
     majorDimension: "ROWS",
     values: [insertVals],
@@ -229,12 +256,19 @@ const updateRow = async (
 };
 
 const deleteRow = async (google: Google, sheet: string, row: number) => {
+  const info = await google<SheetResponse>("GET", "");
+  const sheetId = invariant(
+    info.sheets.find((s) => s.properties.title === sheet)?.properties.sheetId,
+    `Couldn't find sheet '${sheet}' in ${info.sheets.map(
+      (i) => i.properties.title
+    )}`
+  );
   await google<ValuesResponse>("POST", `:batchUpdate`, {
     requests: [
       {
         deleteDimension: {
           range: {
-            sheetId: sheet,
+            sheetId,
             dimension: "ROWS",
             startIndex: row,
             endIndex: row + 1,

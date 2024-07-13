@@ -168,12 +168,16 @@ window.addEventListener("load", async () => {
           state.showCreateModel = false;
           setLoading(true);
           await api?.createModel(value.name);
+          await api?.reloadRemoteData();
+          addRemoteState(state);
           state.loading = false;
           break;
         }
         case "DeleteModel": {
           setLoading(true);
           await api?.deleteModel(value.number);
+          await api?.reloadRemoteData();
+          addRemoteState(state);
           state.loading = false;
           break;
         }
