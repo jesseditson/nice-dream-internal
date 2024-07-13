@@ -20063,6 +20063,10 @@ var ModelView = class extends View {
   get modelNumber() {
     return this.state.chartInputs.model.number;
   }
+  _modelName;
+  get modelName() {
+    return this._modelName || this.state.chartInputs.model.name;
+  }
   mount() {
     const el = invariant(this.rootElement, "model root");
     return [
@@ -20123,11 +20127,22 @@ var ModelView = class extends View {
         });
       }),
       this.eventListener("model-name", "change", () => {
+        this._modelName = this.el("model-name").value;
         this.internalUpdate();
       }),
       this.eventListener("reset-changes", "click", () => {
+        this.dispatchEvent("ResetModelChanges");
       }),
       this.eventListener("save-changes", "click", () => {
+        const model = this.state.chartInputs.model;
+        model.name = this.modelName;
+        model.defaultDays = Number.parseInt(
+          this.el("days").value
+        );
+        model.defaultOffset = Number.parseInt(
+          this.el("offset").value
+        );
+        this.dispatchEvent({ UpdateModel: model });
       }),
       this.eventListener(
         el,
@@ -20306,7 +20321,7 @@ var ModelView = class extends View {
   updated() {
     this.setContent("chart", this.getChart(this.el("chart")));
     const model = invariant(this.state.chartInputs.model, "model");
-    this.setAttrs("model-name", { value: model.name });
+    this.setAttrs("model-name", { value: this.modelName });
     const channelCollection = this.template("collection");
     this.setContent(
       channelCollection,
@@ -20359,7 +20374,8 @@ var ModelView = class extends View {
       }
       this.setContent(`toggle-${n}`, toggleIcon, ".icon");
     });
-    const edited = this.state.chartInputs.days !== model.defaultDays || this.state.chartInputs.offsetDay !== model.defaultOffset || model.name !== this.el("model-name").value;
+    console.log(this.modelName, model.name);
+    const edited = this.state.chartInputs.days !== model.defaultDays || this.state.chartInputs.offsetDay !== model.defaultOffset || model.name !== this.modelName;
     this.el("save-controls").classList.toggle("hidden", !edited);
   }
   get mf() {
@@ -20401,7 +20417,6 @@ var ModelListView = class extends View {
         root2,
         "click",
         (_, el) => {
-          console.log(el);
           this.dispatchEvent({
             ShowModel: { number: parseInt(el.dataset.number) }
           });
@@ -21005,6 +21020,18 @@ window.addEventListener("load", async () => {
           await api?.reloadRemoteData();
           addRemoteState(state);
           state.loading = false;
+          if (state.chartInputs.model) {
+            state.chartInputs.model = state.models.find(
+              (m) => m.number = state.chartInputs.model.number
+            );
+          }
+          break;
+        }
+        case "ResetModelChanges": {
+          const savedModel = models.get(state.chartInputs.model.number);
+          state.chartInputs.model.name = savedModel.name;
+          state.chartInputs.days = savedModel.defaultDays;
+          state.chartInputs.offsetDay = savedModel.defaultOffset;
           break;
         }
         case "DeleteModel": {
