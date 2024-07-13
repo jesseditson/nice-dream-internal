@@ -19702,7 +19702,7 @@ var matchEnum = (enm, arm) => {
   }
 };
 var invariant = (v, message) => {
-  if (!v) {
+  if (v === void 0 || v === null) {
     throw new Error(message || "invariant violated");
   }
   return v;
@@ -19738,6 +19738,9 @@ var unpackValues = (r, cb) => {
     const obj = fieldNames.reduce((o, fn, idx) => {
       const isLast = idx === fieldNames.length - 1;
       o[fn] = isLast && restValues ? restValues : row[idx];
+      if (isLast && !o[fn]) {
+        o[fn] = [];
+      }
       return o;
     }, {});
     cb({ ...obj, number: rowIdx }, rowIdx);
@@ -19856,8 +19859,8 @@ var addRow = async (google2, sheet, values2, rest) => {
     }
     return value;
   }).concat(rest);
-  const range3 = `${sheet}!A${newRow}:A:append`;
-  await google2("POST", `${range3}?valueInputOption=RAW`, {
+  const range3 = `${sheet}`;
+  await google2("POST", `values/${range3}:append?valueInputOption=RAW`, {
     range: range3,
     majorDimension: "ROWS",
     values: [insertVals]
@@ -19886,12 +19889,19 @@ var updateRow = async (google2, sheet, number6, values2, rest) => {
   });
 };
 var deleteRow = async (google2, sheet, row) => {
+  const info = await google2("GET", "");
+  const sheetId = invariant(
+    info.sheets.find((s2) => s2.properties.title === sheet)?.properties.sheetId,
+    `Couldn't find sheet '${sheet}' in ${info.sheets.map(
+      (i) => i.properties.title
+    )}`
+  );
   await google2("POST", `:batchUpdate`, {
     requests: [
       {
         deleteDimension: {
           range: {
-            sheetId: sheet,
+            sheetId,
             dimension: "ROWS",
             startIndex: row,
             endIndex: row + 1
@@ -20952,12 +20962,16 @@ window.addEventListener("load", async () => {
           state.showCreateModel = false;
           setLoading(true);
           await api?.createModel(value.name);
+          await api?.reloadRemoteData();
+          addRemoteState(state);
           state.loading = false;
           break;
         }
         case "DeleteModel": {
           setLoading(true);
           await api?.deleteModel(value.number);
+          await api?.reloadRemoteData();
+          addRemoteState(state);
           state.loading = false;
           break;
         }
