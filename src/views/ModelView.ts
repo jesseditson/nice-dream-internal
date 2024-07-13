@@ -69,13 +69,30 @@ export class ModelView extends View {
         },
         ".toggle, .collection .name"
       ),
-      // this.eventListener("offset", "change", this.updateChartInputs.bind(this)),
+      this.eventListener("offset", "change", () => {
+        this.dispatchEvent({
+          UpdateChart: {
+            offsetDay: Number.parseInt(
+              this.el<HTMLInputElement>("offset").value
+            ),
+          },
+        });
+      }),
       this.eventListener("days", "change", () => {
         this.dispatchEvent({
           UpdateChart: {
             days: Number.parseInt(this.el<HTMLInputElement>("days").value),
           },
         });
+      }),
+      this.eventListener("model-name", "change", () => {
+        this.internalUpdate();
+      }),
+      this.eventListener("reset-changes", "click", () => {
+        // todo
+      }),
+      this.eventListener("save-changes", "click", () => {
+        // todo
       }),
       this.eventListener(
         el,
@@ -262,7 +279,7 @@ export class ModelView extends View {
     this.setContent("chart", this.getChart(this.el("chart")));
 
     const model = invariant(this.state.chartInputs.model, "model");
-    this.setContent("name", model.name);
+    this.setAttrs("model-name", { value: model.name });
     const channelCollection = this.template("collection");
     this.setContent(
       channelCollection,
@@ -295,9 +312,8 @@ export class ModelView extends View {
       ".collection"
     );
     this.setContent("inputs", channelCollection);
-    // this.setAttrs("offset", { max: `${this.state.chartInputs.days}` });
+    this.setAttrs("offset", { value: `${this.state.chartInputs.offsetDay}` });
     this.setAttrs("days", {
-      min: `${this.state.chartInputs.offsetDay}`,
       value: `${this.state.chartInputs.days}`,
     });
     ["low", "mid", "high"].forEach((_n) => {
@@ -318,6 +334,12 @@ export class ModelView extends View {
       }
       this.setContent(`toggle-${n}`, toggleIcon, ".icon");
     });
+
+    const edited =
+      this.state.chartInputs.days !== model.defaultDays ||
+      this.state.chartInputs.offsetDay !== model.defaultOffset ||
+      model.name !== this.el<HTMLInputElement>("model-name").value;
+    this.el("save-controls").classList.toggle("hidden", !edited);
   }
 
   get mf() {

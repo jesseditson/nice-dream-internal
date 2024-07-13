@@ -38,3 +38,7 @@ export const invariant = <T>(v: T, message?: string): NonNullable<T> => {
   }
   return v;
 };
+
+export const assertUnreachable = (_x: never): never => {
+  throw new Error("Unreachable");
+};

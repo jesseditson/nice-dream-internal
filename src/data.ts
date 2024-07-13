@@ -162,6 +162,9 @@ export const getAPI = (
         []
       );
     },
+    updateModel: (model: Omit<Model, "inputs">, inputs: number[]) => {
+      return updateRow(google, "Models", model.number, model, inputs);
+    },
     deleteModel: (number: number) => deleteRow(google, "Models", number),
     createInput: (_input: Input<number>): Promise<number> => {
       const curves = _input.curves;

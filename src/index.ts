@@ -4,10 +4,10 @@ import { NDEvent } from "./events";
 import { ChartData, Model, State } from "./state";
 import { ModelView } from "./views/ModelView";
 import { ModelListView } from "./views/ModelListView";
-import { matchEnum } from "./utils";
+import { assertUnreachable, invariant, matchEnum } from "./utils";
 import { Nav } from "./views/Nav";
 import { QuickSearch } from "./views/QuickSearch";
-import { addRemoteState, getAPI, inputs, setInputData } from "./data";
+import { addRemoteState, getAPI, inputs, models, setInputData } from "./data";
 import { SignInView } from "./views/SignInView";
 import { InputView } from "./views/InputView";
 
@@ -41,7 +41,8 @@ const getChartData = (
   let acc: Record<string, Accumulator> = {};
   let profit = 0;
   let loss = 0;
-  for (let day = offsetDay + 1; day <= days; day++) {
+  let startDay = offsetDay + 1;
+  for (let day = 1; day <= startDay + days; day++) {
     let dayRevenue = 0;
     model.inputs.forEach((i) => {
       if (hiddenInputs.has(i.number)) {
@@ -65,21 +66,25 @@ const getChartData = (
       count =
         count +
         count * Math[i.size > 0 ? "max" : "min"](i.variability * gMult, 0);
-      const revenue = (count / i.frequency) * i.size;
-      dayRevenue += revenue;
-      if (revenue >= 0) {
-        profit += revenue;
-      } else {
-        loss -= revenue;
+      if (day >= startDay) {
+        const revenue = (count / i.frequency) * i.size;
+        dayRevenue += revenue;
+        if (revenue >= 0) {
+          profit += revenue;
+        } else {
+          loss -= revenue;
+        }
+        data.push({
+          input: i.name,
+          day,
+          count,
+          revenue,
+        });
       }
-      data.push({
-        input: i.name,
-        day,
-        count,
-        revenue,
-      });
     });
-    profitLoss.push({ day, total: dayRevenue });
+    if (day >= startDay) {
+      profitLoss.push({ day, total: dayRevenue });
+    }
   }
   return {
     name,
@@ -168,6 +173,18 @@ window.addEventListener("load", async () => {
           state.showCreateModel = false;
           setLoading(true);
           await api?.createModel(value.name);
+          await api?.reloadRemoteData();
+          addRemoteState(state);
+          state.loading = false;
+          break;
+        }
+        case "UpdateModel": {
+          setLoading(true);
+          const inputs = invariant(
+            models.get(value.number),
+            `Invalid model ${value.number}`
+          ).inputs;
+          await api?.updateModel(value, inputs);
           await api?.reloadRemoteData();
           addRemoteState(state);
           state.loading = false;
@@ -305,9 +322,10 @@ window.addEventListener("load", async () => {
             state.chartInputs.showingStacks = value.showingStacks;
           }
           updateChart(state);
+          break;
         }
         default:
-          alert(`Unhandled event ${ev}`);
+          assertUnreachable(ev);
           return;
       }
     });

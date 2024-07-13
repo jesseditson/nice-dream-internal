@@ -1,20 +1,19 @@
 <div id="model" class="w-full hidden">
-  <h1 id="name" class="text-2xl font-bold"></h1>
-  <div class="flex justify-between">
-    <div class="flex gap-2">
-      {% comment %}
-        <label>offset <input
-        id="offset"
-        type="range"
-        min="0"
-        max="365"
-        value="0" /></label>
-      {% endcomment %}
+  <input id="model-name" class="text-2xl font-bold ml-4"></input>
+  <div class="flex justify-end">
+    <div id="save-controls" class="m-2 hidden">
+      <button id="reset-changes" class="rounded-lg text-slate-400 px-4 py-2">Reset</button>
+      <button id="save-changes" class="mx-8 rounded-lg bg-teal-500 text-white px-4 py-2 shadow-sm hover:shadow-lg">Save</button>
     </div>
     <div class="grid grid-cols-4 gap-2">
       days: <input
         class="col-span-3"
         id="days"
+        type="number"
+        value="0" />
+      offset: <input
+        class="col-span-3"
+        id="offset"
         type="number"
         value="0" />
       <span></span>

@@ -1,4 +1,4 @@
-import { Input, State } from "./state";
+import { Input, Model, State } from "./state";
 
 export type NDEvent =
   | { SignedIn: { token: google.accounts.oauth2.TokenResponse } }
@@ -36,7 +36,7 @@ export type NDEvent =
       SaveInput: { number: number };
     }
   | {
-      SaveModel: { number: number };
+      UpdateModel: Omit<Model, "inputs">;
     }
   | {
       ToggleInputShowing: { number: number };
