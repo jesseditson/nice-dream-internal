@@ -19707,6 +19707,9 @@ var invariant = (v, message) => {
   }
   return v;
 };
+var assertUnreachable = (_x) => {
+  throw new Error("Unreachable");
+};
 
 // src/google.ts
 var googleAPI = (token, baseURL) => async (method, endpoint, body) => {
@@ -19823,6 +19826,9 @@ var getAPI = (token, sheetId) => {
         { name, defaultDays: 30, defaultOffset: 0 },
         []
       );
+    },
+    updateModel: (model, inputs2) => {
+      return updateRow(google2, "Models", model.number, model, inputs2);
     },
     deleteModel: (number6) => deleteRow(google2, "Models", number6),
     createInput: (_input) => {
@@ -20100,13 +20106,28 @@ var ModelView = class extends View {
         },
         ".toggle, .collection .name"
       ),
-      // this.eventListener("offset", "change", this.updateChartInputs.bind(this)),
+      this.eventListener("offset", "change", () => {
+        this.dispatchEvent({
+          UpdateChart: {
+            offsetDay: Number.parseInt(
+              this.el("offset").value
+            )
+          }
+        });
+      }),
       this.eventListener("days", "change", () => {
         this.dispatchEvent({
           UpdateChart: {
             days: Number.parseInt(this.el("days").value)
           }
         });
+      }),
+      this.eventListener("model-name", "change", () => {
+        this.internalUpdate();
+      }),
+      this.eventListener("reset-changes", "click", () => {
+      }),
+      this.eventListener("save-changes", "click", () => {
       }),
       this.eventListener(
         el,
@@ -20285,7 +20306,7 @@ var ModelView = class extends View {
   updated() {
     this.setContent("chart", this.getChart(this.el("chart")));
     const model = invariant(this.state.chartInputs.model, "model");
-    this.setContent("name", model.name);
+    this.setAttrs("model-name", { value: model.name });
     const channelCollection = this.template("collection");
     this.setContent(
       channelCollection,
@@ -20316,8 +20337,8 @@ var ModelView = class extends View {
       ".collection"
     );
     this.setContent("inputs", channelCollection);
+    this.setAttrs("offset", { value: `${this.state.chartInputs.offsetDay}` });
     this.setAttrs("days", {
-      min: `${this.state.chartInputs.offsetDay}`,
       value: `${this.state.chartInputs.days}`
     });
     ["low", "mid", "high"].forEach((_n) => {
@@ -20338,6 +20359,8 @@ var ModelView = class extends View {
       }
       this.setContent(`toggle-${n}`, toggleIcon, ".icon");
     });
+    const edited = this.state.chartInputs.days !== model.defaultDays || this.state.chartInputs.offsetDay !== model.defaultOffset || model.name !== this.el("model-name").value;
+    this.el("save-controls").classList.toggle("hidden", !edited);
   }
   get mf() {
     return new Intl.NumberFormat("en-US", {
@@ -20840,7 +20863,8 @@ var getChartData = (name, model, gMult, days, offsetDay, hiddenInputs) => {
   let acc = {};
   let profit = 0;
   let loss = 0;
-  for (let day = offsetDay + 1; day <= days; day++) {
+  let startDay = offsetDay + 1;
+  for (let day = 1; day <= startDay + days; day++) {
     let dayRevenue = 0;
     model.inputs.forEach((i) => {
       if (hiddenInputs.has(i.number)) {
@@ -20861,21 +20885,25 @@ var getChartData = (name, model, gMult, days, offsetDay, hiddenInputs) => {
         count2 = count2 * c4.curve[day % c4.period];
       });
       count2 = count2 + count2 * Math[i.size > 0 ? "max" : "min"](i.variability * gMult, 0);
-      const revenue = count2 / i.frequency * i.size;
-      dayRevenue += revenue;
-      if (revenue >= 0) {
-        profit += revenue;
-      } else {
-        loss -= revenue;
+      if (day >= startDay) {
+        const revenue = count2 / i.frequency * i.size;
+        dayRevenue += revenue;
+        if (revenue >= 0) {
+          profit += revenue;
+        } else {
+          loss -= revenue;
+        }
+        data.push({
+          input: i.name,
+          day,
+          count: count2,
+          revenue
+        });
       }
-      data.push({
-        input: i.name,
-        day,
-        count: count2,
-        revenue
-      });
     });
-    profitLoss.push({ day, total: dayRevenue });
+    if (day >= startDay) {
+      profitLoss.push({ day, total: dayRevenue });
+    }
   }
   return {
     name,
@@ -20962,6 +20990,18 @@ window.addEventListener("load", async () => {
           state.showCreateModel = false;
           setLoading(true);
           await api?.createModel(value.name);
+          await api?.reloadRemoteData();
+          addRemoteState(state);
+          state.loading = false;
+          break;
+        }
+        case "UpdateModel": {
+          setLoading(true);
+          const inputs2 = invariant(
+            models.get(value.number),
+            `Invalid model ${value.number}`
+          ).inputs;
+          await api?.updateModel(value, inputs2);
           await api?.reloadRemoteData();
           addRemoteState(state);
           state.loading = false;
@@ -21099,9 +21139,10 @@ window.addEventListener("load", async () => {
             state.chartInputs.showingStacks = value.showingStacks;
           }
           updateChart(state);
+          break;
         }
         default:
-          alert(`Unhandled event ${ev}`);
+          assertUnreachable(ev);
           return;
       }
     });
