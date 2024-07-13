@@ -20321,7 +20321,7 @@ var ModelView = class extends View {
   updated() {
     this.setContent("chart", this.getChart(this.el("chart")));
     const model = invariant(this.state.chartInputs.model, "model");
-    this.setAttrs("model-name", { value: this.modelName });
+    this.el("model-name").value = this.modelName;
     const channelCollection = this.template("collection");
     this.setContent(
       channelCollection,
@@ -20352,10 +20352,10 @@ var ModelView = class extends View {
       ".collection"
     );
     this.setContent("inputs", channelCollection);
-    this.setAttrs("offset", { value: `${this.state.chartInputs.offsetDay}` });
-    this.setAttrs("days", {
-      value: `${this.state.chartInputs.days}`
-    });
+    this.el(
+      "offset"
+    ).value = `${this.state.chartInputs.offsetDay}`;
+    this.el("days").value = `${this.state.chartInputs.days}`;
     ["low", "mid", "high"].forEach((_n) => {
       const n = _n;
       const chart = this.state.showingCharts.find((c4) => c4.name === n);
@@ -20825,8 +20825,8 @@ var InputView = class extends View {
   updated() {
     const input = this.input;
     const el = invariant(this.rootElement, "input view");
-    this.setAttrs("name", { value: input.name });
-    this.setAttrs("notes", { value: input.notes });
+    this.el("name").value = input.name;
+    this.el("notes").value = input.notes;
     [
       "size",
       "frequency",
@@ -21032,6 +21032,7 @@ window.addEventListener("load", async () => {
           state.chartInputs.model.name = savedModel.name;
           state.chartInputs.days = savedModel.defaultDays;
           state.chartInputs.offsetDay = savedModel.defaultOffset;
+          updateChart(state);
           break;
         }
         case "DeleteModel": {
