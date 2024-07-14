@@ -19861,7 +19861,8 @@ var addRow = async (google2, sheet, values2, rest) => {
   const insertVals = cols.slice(0, -1).map((c4, idx) => {
     const value = values2[c4];
     if (idx < cols.length - 1 && (value === void 0 || value === null)) {
-      throw new Error(`${JSON.stringify(values2)} is missing key '${c4}'`);
+      console.warn(`${JSON.stringify(values2)} is missing key '${c4}'`);
+      return null;
     }
     return value;
   }).concat(rest);
@@ -19882,7 +19883,8 @@ var updateRow = async (google2, sheet, number6, values2, rest) => {
   const insertVals = cols.slice(0, -1).map((c4, idx) => {
     const value = values2[c4];
     if (idx < cols.length - 1 && (value === void 0 || value === null)) {
-      throw new Error(`${JSON.stringify(values2)} is missing key '${c4}'`);
+      console.warn(`${JSON.stringify(values2)} is missing key '${c4}'`);
+      return null;
     }
     return value;
   }).concat(rest);
