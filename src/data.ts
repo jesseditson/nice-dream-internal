@@ -212,7 +212,8 @@ const addRow = async (
     .map((c, idx) => {
       const value = values[c];
       if (idx < cols.length - 1 && (value === undefined || value === null)) {
-        throw new Error(`${JSON.stringify(values)} is missing key '${c}'`);
+        console.warn(`${JSON.stringify(values)} is missing key '${c}'`);
+        return null;
       }
       return value;
     })
@@ -244,7 +245,8 @@ const updateRow = async (
     .map((c, idx) => {
       const value = values[c];
       if (idx < cols.length - 1 && (value === undefined || value === null)) {
-        throw new Error(`${JSON.stringify(values)} is missing key '${c}'`);
+        console.warn(`${JSON.stringify(values)} is missing key '${c}'`);
+        return null;
       }
       return value;
     })
