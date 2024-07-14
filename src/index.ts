@@ -63,7 +63,8 @@ const getChartData = (
       i.curves.forEach((c) => {
         count = count * c.curve[day % c.period];
       });
-      count = count + count * i.variability * gMult;
+      const cMult = i.size > 0 ? gMult : -gMult;
+      count = count + count * i.variability * cMult;
       if (day >= startDay) {
         const revenue = (count / i.frequency) * i.size;
         dayRevenue += revenue;
