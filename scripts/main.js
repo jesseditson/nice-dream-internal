@@ -20912,7 +20912,8 @@ var getChartData = (name, model, gMult, days, offsetDay, hiddenInputs) => {
       i.curves.forEach((c4) => {
         count2 = count2 * c4.curve[day % c4.period];
       });
-      count2 = count2 + count2 * i.variability * gMult;
+      const cMult = i.size > 0 ? gMult : -gMult;
+      count2 = count2 + count2 * i.variability * cMult;
       if (day >= startDay) {
         const revenue = count2 / i.frequency * i.size;
         dayRevenue += revenue;
