@@ -20277,10 +20277,12 @@ var ModelView = class extends View {
       width: container.clientWidth,
       y: {
         grid: true,
-        label: "\u2191 Revenue"
+        label: "Revenue",
+        labelArrow: "up"
       },
       x: {
-        label: "Day \u2192"
+        label: "Day",
+        labelArrow: "right"
       },
       color: {
         legend: true,
@@ -20297,6 +20299,7 @@ var ModelView = class extends View {
             y: "revenue",
             z: "input",
             fill: "input",
+            channels: { Count: "count" },
             tip: true
           }
         ),
