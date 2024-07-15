@@ -133,13 +133,25 @@ export class ModelView extends View {
       this.eventListener(
         el,
         "click",
-        (_, el) => {
+        (e, el) => {
           const number = getDatasetNumber(el, "number");
-          const hiddenInputs = this.state.chartInputs.hiddenInputs;
-          if (hiddenInputs.has(number)) {
-            hiddenInputs.delete(number);
+          let hiddenInputs = this.state.chartInputs.hiddenInputs;
+          if (e.altKey) {
+            if (hiddenInputs.size > 1 && !hiddenInputs.has(number)) {
+              hiddenInputs = new Set();
+            } else {
+              hiddenInputs = new Set(
+                this.state.chartInputs
+                  .model!.inputs.filter((i) => i.number !== number)
+                  .map((i) => i.number)
+              );
+            }
           } else {
-            hiddenInputs.add(number);
+            if (hiddenInputs.has(number)) {
+              hiddenInputs.delete(number);
+            } else {
+              hiddenInputs.add(number);
+            }
           }
           this.dispatchEvent({
             UpdateChart: {
@@ -288,6 +300,11 @@ export class ModelView extends View {
         return opt;
       }),
       ".curves"
+    );
+    this.setData(
+      element,
+      { number: input.number.toString(), field: "curves" },
+      `.curves`
     );
   }
 

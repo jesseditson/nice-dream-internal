@@ -20,11 +20,9 @@ export class QuickSearch extends View {
         const existing = new Set(
           this.state.chartInputs.model?.inputs.map((i) => i.number) || []
         );
-        return this.state.inputs
-          .filter((i) => {
-            return !existing.has(i.number);
-          })
-          .slice(0, 8);
+        return this.state.inputs.filter((i) => {
+          return !existing.has(i.number);
+        });
       }
     }
     return [];
@@ -32,7 +30,7 @@ export class QuickSearch extends View {
 
   private get showingResults() {
     if (!this.input.value) {
-      return this.allResults;
+      return this.allResults.slice(0, 8);
     }
     return this.allResults.filter((i) => {
       return i.name.toLowerCase().includes(this.input.value.toLowerCase());
@@ -86,7 +84,7 @@ export class QuickSearch extends View {
   }
 
   updated() {
-    this.setContent("title", `Find a ${this.state.quickSearch}`);
+    this.setContent("title", `Find an ${this.state.quickSearch}`);
     this.setContent(
       "results",
       this.showingResults.map((r) => {
