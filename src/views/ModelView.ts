@@ -188,10 +188,12 @@ export class ModelView extends View {
       width: container.clientWidth,
       y: {
         grid: true,
-        label: "↑ Revenue",
+        label: "Revenue",
+        labelArrow: "up",
       },
       x: {
-        label: "Day →",
+        label: "Day",
+        labelArrow: "right",
       },
       color: {
         legend: true,
@@ -208,6 +210,7 @@ export class ModelView extends View {
             y: "revenue",
             z: "input",
             fill: "input",
+            channels: { Count: "count" },
             tip: true,
           }
         ),
