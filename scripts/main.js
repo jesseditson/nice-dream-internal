@@ -20223,13 +20223,23 @@ var ModelView = class extends View {
       this.eventListener(
         el,
         "click",
-        (_, el2) => {
+        (e, el2) => {
           const number6 = getDatasetNumber(el2, "number");
-          const hiddenInputs = this.state.chartInputs.hiddenInputs;
-          if (hiddenInputs.has(number6)) {
-            hiddenInputs.delete(number6);
+          let hiddenInputs = this.state.chartInputs.hiddenInputs;
+          if (e.altKey) {
+            if (hiddenInputs.size > 1 && !hiddenInputs.has(number6)) {
+              hiddenInputs = /* @__PURE__ */ new Set();
+            } else {
+              hiddenInputs = new Set(
+                this.state.chartInputs.model.inputs.filter((i) => i.number !== number6).map((i) => i.number)
+              );
+            }
           } else {
-            hiddenInputs.add(number6);
+            if (hiddenInputs.has(number6)) {
+              hiddenInputs.delete(number6);
+            } else {
+              hiddenInputs.add(number6);
+            }
           }
           this.dispatchEvent({
             UpdateChart: {
@@ -20374,6 +20384,11 @@ var ModelView = class extends View {
         return opt;
       }),
       ".curves"
+    );
+    this.setData(
+      element,
+      { number: input.number.toString(), field: "curves" },
+      `.curves`
     );
   }
   updated() {
@@ -20611,14 +20626,14 @@ var QuickSearch = class extends View {
         );
         return this.state.inputs.filter((i) => {
           return !existing.has(i.number);
-        }).slice(0, 8);
+        });
       }
     }
     return [];
   }
   get showingResults() {
     if (!this.input.value) {
-      return this.allResults;
+      return this.allResults.slice(0, 8);
     }
     return this.allResults.filter((i) => {
       return i.name.toLowerCase().includes(this.input.value.toLowerCase());
@@ -20669,7 +20684,7 @@ var QuickSearch = class extends View {
     return !!state.quickSearch;
   }
   updated() {
-    this.setContent("title", `Find a ${this.state.quickSearch}`);
+    this.setContent("title", `Find an ${this.state.quickSearch}`);
     this.setContent(
       "results",
       this.showingResults.map((r) => {
