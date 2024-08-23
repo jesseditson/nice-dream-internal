@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en-US">
+
+  <head>
+    <meta charset="utf-8">
+    <title>Biz Viz</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <meta property="og:title" content="Biz Viz">
+    <meta property="og:type" content="website">
+    <!-- <meta property="og:url" content=""> -->
+    <!-- <meta property="og:image" content=""> -->
+
+    
+    <link rel="apple-touch-icon" href="/icon.png">
+      <!-- Place favicon.ico in the root directory -->
+
+    <link rel="stylesheet" href="/style.css">
+
+    <meta name="theme-color" content="#fafafa">
+  </head>
+
+  <body class="h-full">
+    <div class="px-8 py-2 h-full flex flex-col">
+      
+
+<h1 id="nav" class="flex justify-between h-[50px]">
+  <div class="text-3xl font-bold flex gap-4">
+    <button id="back" class="hidden">
+      <i data-feather="chevron-left"></i>
+    </button>
+    Biz Viz
+  </div>
+  <div id="loader">
+    <div></div>
+  </div>
+</h1>
+
+<div id="signin" class="flex flex-1 justify-center items-center">
+  <button id="authorize-sheets" class="hidden flex gap-4 text-lg ring-1 ring-slate-600 rounded-md shadow-md hover:shadow-lg px-4 py-2">
+    <i data-feather="grid"></i>
+    Grant sheets access to continue
+  </button>
+  <div id="google-auth">
+    <div
+      id="g_id_onload"
+      data-client_id="374023849729-1qhfa3hq4ut4svc7io3u7k9f414he4p8.apps.googleusercontent.com"
+      data-context="signin"
+      data-ux_mode="popup"
+      data-callback="googleAuthComplete"
+      data-auto_select="true"
+      data-itp_support="false"></div>
+
+    <div
+      class="g_id_signin"
+      data-type="standard"
+      data-shape="rectangular"
+      data-theme="outline"
+      data-text="signin_with"
+      data-size="large"
+      data-logo_alignment="left"></div>
+  </div>
+</div>
+
+<div
+  id="model-list"
+  class="hidden"
+  class="flex flex-col gap-4">
+  <div class="flex justify-between">
+    <h2 class="title font-bold text-2xl">Models</h2>
+    <button id="add-model" class="z-20">
+      <i data-feather="plus-square"></i>
+    </button>
+  </div>
+  <ul class="list flex flex-col gap-2 border-t border-slate-200">
+    <li data-template="list-item" class="group flex gap-4 border-slate-200 border-b relative">
+      <button class="delete-model z-20 ml-4 hidden group-hover:block cursor-pointer">
+        <i data-feather="trash-2"></i>
+      </button>
+      <button class="model cursor-pointer flex text-left flex-1 w-full items-center" title="Loading...">
+        <div class="name z-10 font-bold h-24 text-xl ml-4 flex-1 justify-start flex items-center">Loading...</div>
+        <div class="z-10">
+          <i data-feather="chevron-right"></i>
+        </div>
+      </button>
+      <div class="chart absolute top-0 left-0 h-24 w-full opacity-40 z-0"></div>
+    </li>
+  </ul>
+  <div id="add-model-modal" class="hidden w-full h-full top-0 left-0 fixed backdrop-blur-sm flex items-center justify-center z-20">
+    <div id="modal" class="ring-gray-200 ring-1 rounded-lg p-1 overflow-hidden flex flex-col min-w-72 shadow-md bg-white">
+      <h2 id="title" class="p-4 text-lg text-center font-bold text-gray-600">Create Model</h2>
+      <input
+        id="new-model-name"
+        class="px-5 py-3 border-gray-600 border-b-1"
+        type="text"
+        autocomplete="off"
+        autofocus="true"
+        placeholder="Model Name" />
+    </div>
+  </div>
+</div>
+
+<div id="model" class="w-full hidden">
+  <input id="model-name" class="text-2xl font-bold ml-4"></input>
+  <div class="flex justify-end">
+    <div id="save-controls" class="m-2 hidden">
+      <button id="reset-changes" class="rounded-lg text-slate-400 px-4 py-2">Reset</button>
+      <button id="save-changes" class="mx-8 rounded-lg bg-teal-500 text-white px-4 py-2 shadow-sm hover:shadow-lg">Save</button>
+    </div>
+    <div class="grid grid-cols-4 gap-2">
+      days: <input
+        class="col-span-3"
+        id="days"
+        type="number"
+        value="0" />
+      offset: <input
+        class="col-span-3"
+        id="offset"
+        type="number"
+        value="0" />
+      <span></span>
+      <button id="toggle-low" class="flex gap-2 text-red-600">
+        <span class="icon"></span>
+        low
+      </button>
+      <button id="toggle-mid" class="flex gap-2 text-black">
+        <span class="icon"></span>
+        mid
+      </button>
+      <button id="toggle-high" class="flex gap-2 text-green-600">
+        <span class="icon"></span>
+        high
+      </button>
+      profit:
+      <span id="profit-low"></span>
+      <span id="profit-mid"></span>
+      <span id="profit-high"></span>
+      loss:
+      <span id="loss-low"></span>
+      <span id="loss-mid"></span>
+      <span id="loss-high"></span>
+      net:
+      <span id="net-low"></span>
+      <span id="net-mid"></span>
+      <span id="net-high"></span>
+    </div>
+  </div>
+
+  <div id="chart" class="w-full"></div>
+  <div id="inputs">
+    <div data-template="collection" class="flex flex-col gap-4">
+  <div class="w-full flex justify-between">
+    <h2 class="title text-bold text-2xl">Inputs</h2>
+    <button class="add">
+      <i data-feather="plus-square"></i>
+    </button>
+  </div>
+  <ul class="collection flex flex-col gap-2">
+    <li data-template="collection-row" class="flex flex-col border-b last:border-b-0">
+      <div class="group px-4 py-2 flex justify-between gap-2">
+        <button class="toggle-input"></button>
+        <div class="name flex-1">Loading...</div>
+        <div class="buttons hidden group-hover:flex gap-4">
+          <button class="delete" title="delete">
+            <i data-feather="trash-2"></i>
+          </button>
+          <button class="edit" title="edit">
+            <i data-feather="edit-2"></i>
+          </button>
+          <button class="toggle" title="show/hide">
+            <i data-feather="chevron-right"></i>
+          </button>
+        </div>
+      </div>
+      <ul class="items group px-4 py-2 flex flex-col justify-between border-b last:border-b-0">
+        
+          <div class="grid gap-4 grid-cols-2 md:grid-cols-4">
+  <label class="flex gap-2 items-center justify-between">
+    size: <input
+      class="size input-field text-lg w-20 border p-2"
+      data-field="size"
+      step="1"
+      type="number" />
+  </label>
+  <label class="flex gap-2 items-center justify-between">
+    frequency: <input
+      class="frequency input-field text-lg w-20 border p-2"
+      data-field="frequency"
+      step="1"
+      type="number" />
+  </label>
+  <label class="flex gap-2 items-center justify-between">
+    growth %: <input
+      class="growthPercent input-field text-lg w-20 border p-2"
+      data-field="growthPercent"
+      step="0.01"
+      type="number" />
+  </label>
+  <label class="flex gap-2 items-center justify-between">
+    growth frequency: <input
+      class="growthFreq input-field text-lg w-20 border p-2"
+      data-field="growthFreq"
+      step="1"
+      type="number" />
+  </label>
+  <label class="flex gap-2 items-center justify-between">
+    max saturation: <input
+      class="saturation input-field text-lg w-20 border p-2"
+      data-field="saturation"
+      step="1"
+      type="number" />
+  </label>
+  <label class="flex gap-2 items-center justify-between">
+    seed: <input
+      class="seed input-field text-lg w-20 border p-2"
+      data-field="seed"
+      step="1"
+      type="number" />
+  </label>
+  <label class="flex gap-2 items-center justify-between">
+    variability: <input
+      class="variability input-field text-lg w-20 border p-2"
+      data-field="variability"
+      step="0.1"
+      type="number" />
+  </label>
+  <label class="flex gap-2 items-center justify-between">
+    curves:
+    <select
+      multiple="true"
+      class="curves input-field border p-2"
+      data-field="curves"
+      type="select"></select>
+  </label>
+</div>
+
+        
+        <li data-template="collection-item">
+          <div class="name flex-1">Loading...</div>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+
+  </div>
+</div>
+
+<div id="input" class="hidden w-full h-full top-0 left-0 fixed backdrop-blur-sm flex items-center justify-center z-20">
+  <div id="modal" class="ring-gray-200 ring-1 rounded-lg px-8 overflow-hidden flex flex-col min-w-72 shadow-md bg-white">
+    <h2 class="p-4 text-lg text-center font-bold text-gray-600">Input</h2>
+    <label class="pb-4">name: <input
+        id="name"
+        class="text-xl text-bold border p-2"
+        type="text" /></label>
+    <label class="pb-4">
+      notes:
+      <input
+        id="notes"
+        class="text-xl text-bold border p-2"
+        type="text" />
+    </label>
+    <div class="grid gap-4 grid-cols-2 md:grid-cols-4">
+  <label class="flex gap-2 items-center justify-between">
+    size: <input
+      class="size input-field text-lg w-20 border p-2"
+      data-field="size"
+      step="1"
+      type="number" />
+  </label>
+  <label class="flex gap-2 items-center justify-between">
+    frequency: <input
+      class="frequency input-field text-lg w-20 border p-2"
+      data-field="frequency"
+      step="1"
+      type="number" />
+  </label>
+  <label class="flex gap-2 items-center justify-between">
+    growth %: <input
+      class="growthPercent input-field text-lg w-20 border p-2"
+      data-field="growthPercent"
+      step="0.01"
+      type="number" />
+  </label>
+  <label class="flex gap-2 items-center justify-between">
+    growth frequency: <input
+      class="growthFreq input-field text-lg w-20 border p-2"
+      data-field="growthFreq"
+      step="1"
+      type="number" />
+  </label>
+  <label class="flex gap-2 items-center justify-between">
+    max saturation: <input
+      class="saturation input-field text-lg w-20 border p-2"
+      data-field="saturation"
+      step="1"
+      type="number" />
+  </label>
+  <label class="flex gap-2 items-center justify-between">
+    seed: <input
+      class="seed input-field text-lg w-20 border p-2"
+      data-field="seed"
+      step="1"
+      type="number" />
+  </label>
+  <label class="flex gap-2 items-center justify-between">
+    variability: <input
+      class="variability input-field text-lg w-20 border p-2"
+      data-field="variability"
+      step="0.1"
+      type="number" />
+  </label>
+  <label class="flex gap-2 items-center justify-between">
+    curves:
+    <select
+      multiple="true"
+      class="curves input-field border p-2"
+      data-field="curves"
+      type="select"></select>
+  </label>
+</div>
+
+    <div class="flex justify-between my-8">
+      <button id="cancel" class="rounded-lg text-slate-400 px-4 py-2">Cancel</button>
+      <button id="save" class="rounded-lg bg-teal-500 text-white px-4 py-2 shadow-sm hover:shadow-lg">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="quick-search" class="hidden w-full h-full top-0 left-0 fixed backdrop-blur-sm flex items-center justify-center z-20">
+  <div id="modal" class="ring-gray-200 ring-1 rounded-lg p-1 overflow-hidden flex flex-col min-w-72 shadow-md bg-white">
+    <h2 id="title" class="p-4 text-lg text-center font-bold text-gray-600"></h2>
+    <input
+      id="typeahead"
+      class="px-5 py-3 border-gray-600 border-b-1"
+      type="text"
+      incremental="true"
+      autocomplete="off"
+      autofocus="true"
+      placeholder="Search..." />
+    <ul id="results" class="flex flex-col gap-2">
+      <li data-template="result" class="result cursor-pointer border-gray-600 border-b-1 flex justify-between p-4">
+        <div class="name"></div>
+        <button class="select">
+          <i data-feather="chevron-right"></i>
+        </button>
+      </li>
+    </ul>
+    <div id="create-result" class="cursor-pointer p-4"></div>
+  </div>
+</div>
+
+
+    </div>
+    <script src="/scripts/main.js" type="module"></script>
+  </body>
+
+</html>
