@@ -57,7 +57,7 @@ const getChartData = (
           acc[i.number].currentCount + acc[i.number].currentCount * dailyGrowth;
       }
       let count = Math.round(acc[i.number].currentCount);
-      if (count >= i.saturation) {
+      if (i.saturation > 0 && count >= i.saturation) {
         acc[i.number].isSaturated = true;
       }
       i.curves.forEach((c) => {
@@ -111,11 +111,15 @@ const cacheCharts = (state: State): State => {
   return state;
 };
 
+const NICE_DREAMS_SHEET_ID = "1ywvFgv4YQGTOPddovWhQ0D_B5URN2NAp7y4yMGoCtoA";
+
 window.addEventListener("load", async () => {
+  const url = new URL(window.location.href);
+  const sheet = url.searchParams.get("sheet");
   const state: State = {
     loading: false,
     googleToken: null,
-    sheetId: "1ywvFgv4YQGTOPddovWhQ0D_B5URN2NAp7y4yMGoCtoA",
+    sheetId: sheet || NICE_DREAMS_SHEET_ID,
     models: [],
     inputs: [],
     openInputs: new Set(),
@@ -259,7 +263,7 @@ window.addEventListener("load", async () => {
           if (input.number === -1) {
             const inputNumber = await api?.createInput(input);
             if (modelNumber && inputNumber) {
-              await api?.addInput(modelNumber, inputNumber);
+              await api?.addInput(modelNumber, inputNumber - 1);
             }
           } else {
             api?.updateInput(input);
