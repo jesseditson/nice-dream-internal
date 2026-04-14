@@ -66,8 +66,8 @@ export class SignInView extends View {
       const token = JSON.parse(storedToken);
       try {
         const r = await googleAPI(
-          token,
-          "https://www.googleapis.com/oauth2/v3/tokeninfo"
+          token ? token.access_token : "",
+          "https://www.googleapis.com/oauth2/v3/tokeninfo",
         )("GET", `?access_token=${token.access_token}`);
         console.log(r);
         this.dispatchEvent({

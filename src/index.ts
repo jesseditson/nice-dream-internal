@@ -111,7 +111,7 @@ const cacheCharts = (state: State): State => {
   return state;
 };
 
-const NICE_DREAMS_SHEET_ID = "1ywvFgv4YQGTOPddovWhQ0D_B5URN2NAp7y4yMGoCtoA";
+const NICE_DREAM_SHEET_ID = "1ywvFgv4YQGTOPddovWhQ0D_B5URN2NAp7y4yMGoCtoA";
 
 window.addEventListener("load", async () => {
   const url = new URL(window.location.href);
@@ -119,7 +119,7 @@ window.addEventListener("load", async () => {
   const state: State = {
     loading: false,
     googleToken: null,
-    sheetId: sheet || NICE_DREAMS_SHEET_ID,
+    sheetId: sheet || NICE_DREAM_SHEET_ID,
     models: [],
     inputs: [],
     openInputs: new Set(),
