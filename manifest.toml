@@ -1,4 +1,5 @@
 prebuild = [
     "npm ci",
-    "npm run build",
+    "npm run build:js",
+    "npm run build:css"
 ]
