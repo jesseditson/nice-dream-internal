@@ -7,7 +7,15 @@ import { ModelListView } from "./views/ModelListView";
 import { assertUnreachable, invariant, matchEnum } from "./utils";
 import { Nav } from "./views/Nav";
 import { QuickSearch } from "./views/QuickSearch";
-import { addRemoteState, getAPI, inputs, models, setInputData } from "./data";
+import {
+  addRemoteState,
+  createSheet,
+  getAPI,
+  inputs,
+  listSheets,
+  models,
+  setInputData,
+} from "./data";
 import { SignInView } from "./views/SignInView";
 import { InputView } from "./views/InputView";
 
@@ -105,13 +113,48 @@ const updateChart = (state: State): State => {
   return state;
 };
 const cacheCharts = (state: State): State => {
+  state.vizCache = new Map();
   state.models.forEach((model) => {
     state.vizCache.set(model.number, getChartData("mid", model, 0));
   });
   return state;
 };
 
-const NICE_DREAM_SHEET_ID = "1ywvFgv4YQGTOPddovWhQ0D_B5URN2NAp7y4yMGoCtoA";
+const syncSheetURL = (
+  sheetId: string | null,
+  mode: "push" | "replace" = "push"
+) => {
+  const url = new URL(window.location.href);
+  if (sheetId) {
+    url.searchParams.set("sheet", sheetId);
+  } else {
+    url.searchParams.delete("sheet");
+  }
+  window.history[mode === "push" ? "pushState" : "replaceState"](
+    {},
+    "",
+    url
+  );
+};
+
+const resetSheetState = (state: State) => {
+  state.models = [];
+  state.inputs = [];
+  state.sheetError = undefined;
+  state.chartInputs.model = undefined;
+  state.chartInputs.days = 30;
+  state.chartInputs.offsetDay = 0;
+  state.chartInputs.hiddenInputs = new Set();
+  state.openInputs = new Set();
+  state.showingInput = undefined;
+  state.createInputModel = undefined;
+  state.quickSearch = undefined;
+  state.quickSearchNumber = undefined;
+  state.showCreateModel = false;
+  state.showingCharts = [];
+  state.vizCache = new Map();
+  state.showingScreen = "Models";
+};
 
 window.addEventListener("load", async () => {
   const url = new URL(window.location.href);
@@ -119,7 +162,9 @@ window.addEventListener("load", async () => {
   const state: State = {
     loading: false,
     googleToken: null,
-    sheetId: sheet || NICE_DREAM_SHEET_ID,
+    sheetId: sheet,
+    sheets: [],
+    sheetError: undefined,
     models: [],
     inputs: [],
     openInputs: new Set(),
@@ -130,26 +175,86 @@ window.addEventListener("load", async () => {
       offsetDay: 0,
       hiddenInputs: new Set(),
     },
+    showCreateSheet: false,
     showCreateModel: false,
     showingCharts: [],
     vizCache: new Map(),
   };
 
   const upd8 = initUI(state, async (event) => {
-    const api = getAPI(state.googleToken, state.sheetId);
+    const api = state.sheetId ? getAPI(state.googleToken, state.sheetId) : undefined;
     const setLoading = (loading: boolean) => {
       state.loading = loading;
       upd8(state);
+    };
+    const refreshSheets = async () => {
+      if (!state.googleToken) {
+        return;
+      }
+      state.sheets = await listSheets(state.googleToken);
+    };
+    const loadSelectedSheet = async (
+      sheetId: string,
+      mode: "push" | "replace" = "push"
+    ) => {
+      if (!state.googleToken) {
+        return;
+      }
+      resetSheetState(state);
+      state.sheetId = sheetId;
+      syncSheetURL(sheetId, mode);
+      try {
+        await getAPI(state.googleToken, sheetId)?.reloadRemoteData();
+        await addRemoteState(state);
+        cacheCharts(state);
+        updateChart(state);
+      } catch (error) {
+        state.sheetError =
+          error instanceof Error
+            ? error.message
+            : "Unable to load the selected spreadsheet.";
+      }
     };
     await matchEnum(event, async (ev, value) => {
       switch (ev) {
         case "SignedIn": {
           setLoading(true);
           state.googleToken = value.token;
-          await getAPI(state.googleToken, state.sheetId)?.reloadRemoteData();
-          await addRemoteState(state);
-          cacheCharts(state);
-          updateChart(state);
+          await refreshSheets();
+          if (state.sheetId) {
+            await loadSelectedSheet(state.sheetId, "replace");
+          } else {
+            resetSheetState(state);
+          }
+          state.loading = false;
+          break;
+        }
+        case "SelectSheet": {
+          if (state.sheetId === value.sheetId && !state.sheetError) {
+            break;
+          }
+          setLoading(true);
+          await loadSelectedSheet(value.sheetId);
+          state.loading = false;
+          break;
+        }
+        case "ShowCreateSheet": {
+          state.showCreateSheet = true;
+          break;
+        }
+        case "CancelCreateSheet": {
+          state.showCreateSheet = false;
+          break;
+        }
+        case "CreateSheet": {
+          if (!state.googleToken) {
+            break;
+          }
+          state.showCreateSheet = false;
+          setLoading(true);
+          const created = await createSheet(state.googleToken, value.name);
+          await refreshSheets();
+          await loadSelectedSheet(created.id);
           state.loading = false;
           break;
         }
@@ -165,6 +270,9 @@ window.addEventListener("load", async () => {
           break;
         }
         case "ShowCreateModel": {
+          if (!state.sheetId || state.sheetError) {
+            break;
+          }
           state.showCreateModel = true;
           break;
         }
@@ -173,15 +281,25 @@ window.addEventListener("load", async () => {
           break;
         }
         case "CreateModel": {
+          if (!api) {
+            break;
+          }
+          const name = value.name.trim();
+          if (!name) {
+            break;
+          }
           state.showCreateModel = false;
           setLoading(true);
-          await api?.createModel(value.name);
+          const created = await createSheet(state.googleToken, name);
           await api?.reloadRemoteData();
           addRemoteState(state);
           state.loading = false;
           break;
         }
         case "UpdateModel": {
+          if (!api) {
+            break;
+          }
           setLoading(true);
           const inputs = invariant(
             models.get(value.number),
@@ -207,6 +325,9 @@ window.addEventListener("load", async () => {
           break;
         }
         case "DeleteModel": {
+          if (!api) {
+            break;
+          }
           setLoading(true);
           await api?.deleteModel(value.number);
           await api?.reloadRemoteData();
@@ -252,6 +373,9 @@ window.addEventListener("load", async () => {
           break;
         }
         case "SaveInput": {
+          if (!api) {
+            break;
+          }
           const input = state.showingInput;
           const modelNumber = state.createInputModel;
           state.createInputModel = undefined;
@@ -286,6 +410,9 @@ window.addEventListener("load", async () => {
           break;
         }
         case "AddInput": {
+          if (!api) {
+            break;
+          }
           state.quickSearch = undefined;
           state.quickSearchNumber = undefined;
           setLoading(true);
@@ -297,6 +424,9 @@ window.addEventListener("load", async () => {
           break;
         }
         case "RemoveInput": {
+          if (!api) {
+            break;
+          }
           setLoading(true);
           await api?.removeInput(value.modelNumber, value.inputNumber);
           await api?.reloadRemoteData();

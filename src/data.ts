@@ -1,5 +1,5 @@
 import { invariant } from "./utils";
-import { Curve, Input, Model, State } from "./state";
+import { Curve, Input, Model, SpreadsheetSummary, State } from "./state";
 import { googleAPI } from "./google";
 
 type SheetName = "Inputs" | "Models" | "Curves";
@@ -33,7 +33,37 @@ type SheetResponse = {
   }[];
   spreadsheetUrl: string;
 };
+type DriveFilesResponse = {
+  nextPageToken?: string;
+  files: SpreadsheetSummary[];
+};
+type CreateSpreadsheetResponse = {
+  spreadsheetId: string;
+  spreadsheetUrl: string;
+  properties?: {
+    title?: string;
+  };
+};
 type Google = ReturnType<typeof googleAPI>;
+
+const GOOGLE_DRIVE_FILES_URL = "https://www.googleapis.com/drive/v3/files";
+const GOOGLE_SHEETS_URL = "https://sheets.googleapis.com/v4/spreadsheets";
+const SHEET_HEADERS = {
+  Models: ["name", "defaultDays", "defaultOffset", "inputs"],
+  Inputs: [
+    "name",
+    "frequency",
+    "size",
+    "growthPercent",
+    "growthFreq",
+    "notes",
+    "seed",
+    "saturation",
+    "variability",
+    "curves",
+  ],
+  Curves: ["name", "curve", "notes", "period"],
+} as const;
 
 const unpackValues = (
   r: ValuesResponse,
@@ -180,6 +210,65 @@ export const getAPI = (
       delete input.curves;
       return updateRow(google, "Inputs", input.number, input, curves);
     },
+  };
+};
+
+export const listSheets = async (
+  token: google.accounts.oauth2.TokenResponse
+): Promise<SpreadsheetSummary[]> => {
+  const google = googleAPI(token.access_token, GOOGLE_DRIVE_FILES_URL);
+  const files: SpreadsheetSummary[] = [];
+  let pageToken: string | undefined;
+
+  do {
+    const params = new URLSearchParams({
+      q: "mimeType='application/vnd.google-apps.spreadsheet' and trashed=false",
+      fields: "nextPageToken,files(id,name,modifiedTime,webViewLink)",
+      orderBy: "modifiedTime desc",
+      pageSize: "1000",
+      supportsAllDrives: "true",
+      includeItemsFromAllDrives: "true",
+    });
+    if (pageToken) {
+      params.set("pageToken", pageToken);
+    }
+    const response = await google<DriveFilesResponse>("GET", `?${params}`);
+    files.push(...response.files);
+    pageToken = response.nextPageToken;
+  } while (pageToken);
+
+  return files;
+};
+
+export const createSheet = async (
+  token: google.accounts.oauth2.TokenResponse,
+  title: string
+): Promise<SpreadsheetSummary> => {
+  const google = googleAPI(token.access_token, GOOGLE_SHEETS_URL);
+  const created = await google<CreateSpreadsheetResponse>("POST", "", {
+    properties: { title },
+    sheets: Object.keys(SHEET_HEADERS).map((sheetTitle) => ({
+      properties: { title: sheetTitle },
+    })),
+  });
+
+  const spreadsheet = googleAPI(
+    token.access_token,
+    `${GOOGLE_SHEETS_URL}/${created.spreadsheetId}`
+  );
+  await spreadsheet("POST", "values:batchUpdate", {
+    valueInputOption: "RAW",
+    data: Object.entries(SHEET_HEADERS).map(([sheetTitle, headers]) => ({
+      range: `${sheetTitle}!A1`,
+      majorDimension: "ROWS",
+      values: [headers],
+    })),
+  });
+
+  return {
+    id: created.spreadsheetId,
+    name: created.properties?.title || title,
+    webViewLink: created.spreadsheetUrl,
   };
 };
 

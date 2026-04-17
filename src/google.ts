@@ -1,3 +1,12 @@
+export const GOOGLE_SHEETS_SCOPE =
+  "https://www.googleapis.com/auth/spreadsheets";
+export const GOOGLE_DRIVE_METADATA_SCOPE =
+  "https://www.googleapis.com/auth/drive.metadata.readonly";
+export const GOOGLE_APP_SCOPES = [
+  GOOGLE_SHEETS_SCOPE,
+  GOOGLE_DRIVE_METADATA_SCOPE,
+].join(" ");
+
 export const googleAPI =
   (token: string, baseURL: string) =>
   async <T>(

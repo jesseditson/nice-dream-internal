@@ -1,7 +1,7 @@
 import { jwtDecode } from "jwt-decode";
 import { State } from "../state";
 import { View } from "./View";
-import { googleAPI } from "../google";
+import { GOOGLE_APP_SCOPES, googleAPI } from "../google";
 
 // https://developers.google.com/identity/gsi/web/reference/js-reference#CredentialResponse
 type GoogleJWT = {
@@ -19,6 +19,9 @@ type GoogleJWT = {
   iat: number;
   exp: number;
   jti: string;
+};
+type TokenInfoResponse = {
+  scope: string;
 };
 
 let googleAuthCreds: { credential?: string; select_by?: string } = {};
@@ -69,11 +72,15 @@ export class SignInView extends View {
           token ? token.access_token : "",
           "https://www.googleapis.com/oauth2/v3/tokeninfo",
         )("GET", `?access_token=${token.access_token}`);
-        console.log(r);
-        this.dispatchEvent({
-          SignedIn: { token },
-        });
-        return;
+        const tokenInfo = r as TokenInfoResponse;
+        const grantedScopes = new Set((tokenInfo.scope || "").split(" "));
+        const requiredScopes = GOOGLE_APP_SCOPES.split(" ");
+        if (requiredScopes.every((scope) => grantedScopes.has(scope))) {
+          this.dispatchEvent({
+            SignedIn: { token },
+          });
+          return;
+        }
       } catch (e) {
         console.log("Token no longer valid");
       }
@@ -87,8 +94,7 @@ export class SignInView extends View {
       console.log(credentials);
       this.tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: credentials.aud,
-        // TODO: move to "https://www.googleapis.com/auth/drive.file" and implement filepicker
-        scope: "https://www.googleapis.com/auth/spreadsheets",
+        scope: GOOGLE_APP_SCOPES,
         callback: (response) => {
           localStorage.setItem("googleToken", JSON.stringify(response));
           console.log(response);

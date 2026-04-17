@@ -3,6 +3,14 @@ import { Input, Model, State } from "./state";
 export type NDEvent =
   | { SignedIn: { token: google.accounts.oauth2.TokenResponse } }
   | "GoBack"
+  | "ShowCreateSheet"
+  | "CancelCreateSheet"
+  | {
+      SelectSheet: { sheetId: string };
+    }
+  | {
+      CreateSheet: { name: string };
+    }
   | "ShowCreateModel"
   | "CancelCreateModel"
   | {

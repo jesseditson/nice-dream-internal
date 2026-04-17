@@ -41,10 +41,19 @@ export type ChartData = {
   profitLoss: { day: number; total: number }[];
 };
 
+export type SpreadsheetSummary = {
+  id: string;
+  name: string;
+  modifiedTime?: string;
+  webViewLink?: string;
+};
+
 export type State = {
   loading: boolean;
   googleToken: google.accounts.oauth2.TokenResponse | null;
-  sheetId: string;
+  sheetId: string | null;
+  sheets: SpreadsheetSummary[];
+  sheetError?: string;
   models: Model[];
   inputs: Input[];
   chartInputs: {
@@ -59,6 +68,7 @@ export type State = {
   createInputModel?: number;
   quickSearch?: "Input";
   quickSearchNumber?: number;
+  showCreateSheet: boolean;
   showCreateModel: boolean;
   showingScreen: "Models" | "Inputs" | "Model";
   showingCharts: ChartData[];
