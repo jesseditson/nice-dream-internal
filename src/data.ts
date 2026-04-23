@@ -3,6 +3,7 @@ import { Curve, Input, Model, SpreadsheetSummary, State } from "./state";
 import { googleAPI } from "./google";
 
 type SheetName = "Inputs" | "Models" | "Curves";
+type TokenResponse = {access_token: string};
 
 type ValuesResponse = {
   majorDimensions: "ROWS" | "COLS";
@@ -170,7 +171,7 @@ export const derefInput = (id: number): State["inputs"][0] => {
 };
 
 export const getAPI = (
-  token: google.accounts.oauth2.TokenResponse | null,
+  token: TokenResponse | null,
   sheetId: string
 ) => {
   if (!token) {
@@ -214,7 +215,7 @@ export const getAPI = (
 };
 
 export const listSheets = async (
-  token: google.accounts.oauth2.TokenResponse
+  token: TokenResponse
 ): Promise<SpreadsheetSummary[]> => {
   const google = googleAPI(token.access_token, GOOGLE_DRIVE_FILES_URL);
   const files: SpreadsheetSummary[] = [];
@@ -241,7 +242,7 @@ export const listSheets = async (
 };
 
 export const createSheet = async (
-  token: google.accounts.oauth2.TokenResponse,
+  token: TokenResponse,
   title: string
 ): Promise<SpreadsheetSummary> => {
   const google = googleAPI(token.access_token, GOOGLE_SHEETS_URL);
